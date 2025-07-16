@@ -1,0 +1,221 @@
+/* 전체 컨테이너 */
+.auth-container {
+    max-width: 500px;
+    margin: 4rem auto;
+    padding: 2.5rem 2rem;
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #e1e3e5;
+    margin-bottom: 0px;
+    object-fit: contain;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.3rem;
+    width: 100%;
+}
+
+.auth-form label {
+    font-size: 1rem;
+    color: #444;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.01em;
+    display: block;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    margin-top: 0.25rem;
+    border: 1px solid #cccccc;
+    border-radius: 7px;
+    font-size: 1rem;
+    background: #fff;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: #e03e3e;
+    box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.12);
+}
+
+/* 버튼 스타일 */
+.auth-form button {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.85rem;
+    margin-top: 0.7rem;
+    background-color: #e03e3e;
+    color: #fff;
+    font-size: 1.08rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background-color 0.19s, transform 0.12s;
+    letter-spacing: 0.04em;
+}
+
+.auth-form button:hover {
+    background-color: #b82b2b;
+    transform: translateY(-1px) scale(1.01);
+}
+
+.auth-form button:active {
+    transform: translateY(0) scale(1.0);
+}
+
+.auth-form input {
+    height: 35px;
+    box-sizing: border-box;
+}
+
+.email-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0.25rem;
+}
+
+.email-id,
+.email-domain,
+.email-select {
+    /* select에도 동일 적용! */
+    width: 400px;   /* 기존 110px → 140px 또는 그 이상 */
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    background: #fff;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.email-select {
+    background: #fff;
+    /* 브라우저 기본 스타일에 따라 높이 맞추기 */
+    height: 35px; /* input 높이와 맞춰주는 옵션, 필요시 조정 */
+}
+
+.email-domain:disabled {
+    background: #f5f5f5;
+    color: #999;
+}
+
+.email-at {
+    font-size: 1.1rem;
+    color: #555;
+    margin: 0 2px;
+    user-select: none;
+}
+
+.left-ad-bar {
+    width: 465px;
+    margin: 0 auto 2rem auto;
+    border-radius: 8px;
+    border: 1px solid #e1e3e5;
+    overflow: hidden;
+    padding: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    height: auto;
+    margin-top: 8px;
+}
+
+.left-ad-img {
+    width: 100%;
+    height: 150px;
+    display: block;
+    object-fit: fill;
+    border-radius: 0;
+    background: #fff;
+}
+
+/* 회원가입의 중복확인 버튼 */
+.inline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inline-wrapper {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.inline-wrapper input {
+  flex: 1;
+  height: 35px;
+  width: auto !important; /* 기존 400px 무시 */
+  /* height: 40px !important; 기존 높이 유지 */
+}
+
+.inline-wrapper .duplicate-button {
+  width: 100px;
+  height: 35px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  margin: 5px 0 0 0;
+}
+
+.inline-duplicate-wrapper{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    flex: 1;
+    height: 30px;
+}
+.duplicate-send-button, .duplicate-check-button,
+.auth-form button {
+    width: 100%;
+    height: 35px;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 5px 0 0 0 !important;
+    padding: 0.3rem 0.5rem;
+}
+
+.signup-btn {
+  width: 100%;
+  height: 40px;
+  background: #e03e3e;  /* 활성화(파랑) */
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.08rem;
+  margin-top: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.signup-btn:disabled {
+  background: #d1d5db; /* 회색 */
+  color: #888;
+  cursor: not-allowed !important;
+}
+
+.signup-btn:disabled,
+.signup-btn:disabled:hover,
+.signup-btn:disabled:active,
+.signup-btn:disabled:focus {
+  background: #d1d5db !important;
+  color: #888 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
