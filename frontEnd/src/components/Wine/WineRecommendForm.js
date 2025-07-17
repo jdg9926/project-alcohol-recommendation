@@ -42,10 +42,11 @@ export default function WineRecommendForm({ onRecommend }) {
         
         console.log("userInput ::", userInput);
         try {
-            const response = await axios.post("http://localhost:8000/recommend", userInput);
+            const response = await axios.post("http://3.36.66.231:8000/recommend", userInput);
             console.log("response ::", response.data.recommendation);
             if (onRecommend) onRecommend(response.data.recommendation);
         } catch (error) {
+            console.log(error);
             alert("추천 요청 실패!");
         }
     };

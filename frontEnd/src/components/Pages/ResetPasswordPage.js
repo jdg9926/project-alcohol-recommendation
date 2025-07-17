@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// const API_BASE_URL = "http://localhost:8888";
-const API_BASE_URL = "http://192.168.3.24:8888";
+const API_BASE_URL = "http://3.36.66.231:8888";
 
 export default function ResetPasswordPage() {
     const navigate = useNavigate();

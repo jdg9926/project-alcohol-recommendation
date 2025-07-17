@@ -1,5 +1,4 @@
-const API_BASE_URL = "http://localhost:8888";
-// const API_BASE_URL = "http://192.168.3.24:8888";
+const API_BASE_URL = "http://3.36.66.231:8888";
 
 // ✅ 아이디 중복 확인
 export const checkUserIdDuplicate = async (userId, setIsUserIdChecked) => {

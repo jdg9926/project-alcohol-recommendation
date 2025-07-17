@@ -22,7 +22,7 @@ export default function BoardWrite() {
         let statusText = '';
         let errorMessage = '';
         try {
-            const response = await fetch("http://localhost:8888/api/board/write", {
+            const response = await fetch("http://3.36.66.231:8888/api/board/write", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -53,7 +53,7 @@ export default function BoardWrite() {
             setError(err.message);
             // ---- 에러 내용 게시판에 업로드 ----
             try {
-                await fetch("http://localhost:8888/api/board/write", {
+                await fetch("http://3.36.66.231:8888/api/board/write", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"

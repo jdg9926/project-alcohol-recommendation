@@ -10,7 +10,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://3.36.66.231:3000",
+        "http://project-alcohol-recommendation.s3-website.ap-northeast-2.amazonaws.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,7 +32,7 @@ class WineRequest(BaseModel):
     price: str = "상관없음"
 
 def post_to_board(title, content, author="AI"):
-    API_URL = "http://localhost:8888/api/board/write"
+    API_URL = "http://3.36.66.231:8888/api/board/write"
     post_data = {
         "title": title,
         "content": content,

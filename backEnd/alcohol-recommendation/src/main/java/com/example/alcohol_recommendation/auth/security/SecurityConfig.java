@@ -42,25 +42,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                 		"/",
-                		"/api/animals/**",
                         "/api/auth/signup", 
                         "/api/auth/login",
                         "/api/auth/find-userId",
                         "/api/auth/reset-password-request",
                         "/api/auth/reset-password",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
-                        "/request",
-                    	"/request/*",
-                    	"/request/img/**",
                         "/board/**",
-                        "/images/**",
-                        "/comment/**",
-                        "/customer/faq/**",
-                        "/customer/qna/**",
-                        "/admin/**",
-                        "/customer/adoption/**",
-                        "/uploads/**",
                         "/api/users/**",
                         "/api/**"
                 ).permitAll()
@@ -77,7 +64,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://192.168.3.24:3000", "http://localhost:3000"));
+        config.setAllowedOrigins(List.of("http://localhost:3000", "http://project-alcohol-recommendation.s3-website.ap-northeast-2.amazonaws.com/"));
         config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS", "PATCH"));
         config.setAllowCredentials(true);
         config.setAllowedHeaders(List.of("*"));
