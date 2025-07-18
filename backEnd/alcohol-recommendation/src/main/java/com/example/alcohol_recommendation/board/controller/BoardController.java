@@ -1,10 +1,16 @@
 package com.example.alcohol_recommendation.board.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,7 +19,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.alcohol_recommendation.board.model.Board;
@@ -50,20 +58,47 @@ public class BoardController {
     }
     
     // 등록
-    @PostMapping("/write")
-    public Board createBoard(@RequestBody Board board) {
-        // 제목, 내용, 작성자 등 필수값 체크
-        if (board.getTitle() == null || board.getTitle().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "제목은 필수입니다.");
-        }
-        if (board.getContent() == null || board.getContent().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "내용은 필수입니다.");
-        }
-        
-        // 날짜 자동 생성
-        board.setCreatedAt(LocalDateTime.now());
-        return boardRepository.save(board);
-    }
+    @PostMapping(value = "/write", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public Board createBoard(@RequestPart("title") String title,
+							 @RequestPart("content") String content,
+							 @RequestPart("author") String author,
+							 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+    	
+	    if (title == null || title.trim().isEmpty()) {
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "제목은 필수입니다.");
+	    }
+	    if (content == null || content.trim().isEmpty()) {
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "내용은 필수입니다.");
+	    }
+
+	    Board board = new Board();
+	    board.setTitle(title);
+	    board.setContent(content);
+	    board.setAuthor(author);
+	    board.setCreatedAt(LocalDateTime.now());
+
+
+	    // 파일 저장
+	    if (files != null && !files.isEmpty()) {
+	        String uploadDir = "uploads/";
+	        try {
+	            Files.createDirectories(Paths.get(uploadDir)); // 폴더 생성(최초 1회만)
+	            for (MultipartFile file : files) {
+	                if (!file.isEmpty()) {
+	                    String originalFilename = file.getOriginalFilename();
+	                    String saveFilename = System.currentTimeMillis() + "_" + originalFilename;
+	                    Path savePath = Paths.get(uploadDir, saveFilename);
+	                    file.transferTo(savePath.toFile());
+	                    board.addFileName(saveFilename);
+	                }
+	            }
+	        } catch (IOException e) {
+	        	e.printStackTrace();
+	            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장 실패", e);
+	        }
+	    }
+	    return boardRepository.save(board);
+	}
     
     // 수정
     @PutMapping("/{id}")

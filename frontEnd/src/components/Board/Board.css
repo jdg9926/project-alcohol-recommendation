@@ -389,3 +389,36 @@
     background: #ececec;
     color: #333;
 }
+
+/* ==== 파일 업로드 ==== */
+.file-dropzone {
+    border: 2px dashed #a0aec0;
+    background: #f9fafb;
+    padding: 18px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 12px;
+    transition: background 0.2s;
+}
+.file-dropzone:hover {
+    background: #f1f5f9;
+}
+.file-preview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.file-preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+.file-remove-btn {
+    background: none;
+    color: #ef4444;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 6px;
+}
