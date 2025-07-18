@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./Board.css";
 
+import { BASE_URL } from "../../api/baseUrl";
+
 export default function BoardEdit() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -10,7 +12,7 @@ export default function BoardEdit() {
 
     // 기존 내용 불러오기
     useEffect(() => {
-        fetch(`http://43.200.182.46:8888/api/board/${id}`)
+        fetch(`${BASE_URL}:8888/api/board/${id}`)
             .then(res => res.json())
             .then(data => setForm({ title: data.title, content: data.content }))
             .finally(() => setLoading(false));
@@ -23,7 +25,7 @@ export default function BoardEdit() {
     const handleSubmit = async e => {
         e.preventDefault();
         try {
-            const res = await fetch(`http://43.200.182.46:8888/api/board/${id}`, {
+            const res = await fetch(`${BASE_URL}:8888/api/board/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),

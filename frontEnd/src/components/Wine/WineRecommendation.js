@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { useState } from 'react';
 
+import { BASE_URL } from '../../api/baseUrl';
+
 const WineRecommendation = () => {
   const [formData, setFormData] = useState({
     taste: '풍부하고 진한',
@@ -22,7 +24,7 @@ const WineRecommendation = () => {
 
   const getRecommendation = async () => {
     try {
-      const response = await axios.post('http://43.200.182.46:8000/recommend', formData);
+      const response = await axios.post(`${BASE_URL}:8000/recommend`, formData);
       setRecommendation(response.data.recommendation);
     } catch (error) {
       console.error(error);

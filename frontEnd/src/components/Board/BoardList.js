@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+
+import { BASE_URL } from "../../api/baseUrl";
+
 import "./Board.css";
 
 export default function BoardList() {
@@ -24,7 +27,7 @@ export default function BoardList() {
 
     useEffect(() => {
         setLoading(true);
-        let url = `http://43.200.182.46:8888/api/board/list?page=${page}&size=${size}&sort=createdAt,${sortOrder}`;
+        let url = `${BASE_URL}:8888/api/board/list?page=${page}&size=${size}&sort=createdAt,${sortOrder}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
         fetch(url)
             .then(res => {

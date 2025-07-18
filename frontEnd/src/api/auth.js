@@ -1,7 +1,7 @@
-const BASE_URL = "http://43.200.182.46:8888";
+import { BASE_URL } from "./baseUrl";
 
 export async function signup({ userId, nickname, password, email }) {
-    const res = await fetch(`${BASE_URL}/api/auth/signup`, {
+    const res = await fetch(`${BASE_URL}:8888/api/auth/signup`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -70,7 +70,7 @@ export async function verifyEmailCode(email, code) {
 }
 
 export async function login({ userId, password }) {
-    const res = await fetch(`${BASE_URL}/api/auth/login`, {
+    const res = await fetch(`${BASE_URL}:8888/api/auth/login`, {
         method: "POST",
         headers: { 
             "Content-Type": "application/json" 
@@ -99,7 +99,7 @@ export async function getMe() {
     }
 
     
-    const res = await fetch(`${BASE_URL}/api/auth/me`, {
+    const res = await fetch(`${BASE_URL}:8888/api/auth/me`, {
         method: 'GET',
         headers: {
         'Content-Type': 'application/json',

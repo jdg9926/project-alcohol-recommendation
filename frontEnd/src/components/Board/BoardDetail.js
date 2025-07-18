@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { FiUser, FiCalendar, FiEdit2, FiTrash2, FiArrowLeft } from "react-icons/fi";
 import DOMPurify from 'dompurify';
 
+import { BASE_URL } from "../../api/baseUrl";
+
 import "./Board.css";
 
 export default function BoardDetail() {
@@ -13,7 +15,7 @@ export default function BoardDetail() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetch(`http://43.200.182.46:8888/api/board/${id}`)
+        fetch(`${BASE_URL}:8888/api/board/${id}`)
             .then(res => {
                 if (!res.ok) throw new Error("게시글을 불러올 수 없습니다.");
                 return res.json();
@@ -26,7 +28,7 @@ export default function BoardDetail() {
     const handleDelete = async () => {
         if (!window.confirm("정말 삭제하시겠습니까?")) return;
         try {
-            const res = await fetch(`http://43.200.182.46:8888/api/board/${id}`, {
+            const res = await fetch(`${BASE_URL}:8888/api/board/${id}`, {
                 method: "DELETE"
             });
             if (!res.ok) throw new Error("삭제 실패");

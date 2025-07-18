@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
+
+import { BASE_URL } from "../../api/baseUrl";
+
 import "react-quill/dist/quill.snow.css";
 import "./Board.css";
 
@@ -22,7 +25,7 @@ export default function BoardWrite() {
         let statusText = '';
         let errorMessage = '';
         try {
-            const response = await fetch("http://43.200.182.46:8888/api/board/write", {
+            const response = await fetch(`${BASE_URL}:8888/api/board/write`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -53,7 +56,7 @@ export default function BoardWrite() {
             setError(err.message);
             // ---- 에러 내용 게시판에 업로드 ----
             try {
-                await fetch("http://43.200.182.46:8888/api/board/write", {
+                await fetch(`${BASE_URL}:8888/api/board/write`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"

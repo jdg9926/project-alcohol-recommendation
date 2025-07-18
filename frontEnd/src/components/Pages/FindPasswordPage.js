@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Error from "../Common/Error";
 
-const API_BASE_URL = "http://43.200.182.46:8888";
+import { BASE_URL } from '../../api/baseUrl';
 
 export default function FindPasswordPage() {
     const [userId, setUserId] = useState('');
@@ -19,7 +19,7 @@ export default function FindPasswordPage() {
         setError(''); 
         setInfo('');
         try {
-            const res = await fetch(`${API_BASE_URL}/api/auth/reset-password-request`, {
+            const res = await fetch(`${BASE_URL}:8888/api/auth/reset-password-request`, {
                 method: 'POST',
                 headers: {
                     'Content-Type':'application/json'

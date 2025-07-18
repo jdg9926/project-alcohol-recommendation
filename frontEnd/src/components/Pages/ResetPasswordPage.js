@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = "http://43.200.182.46:8888";
+import { BASE_URL } from '../../api/baseUrl';
 
 export default function ResetPasswordPage() {
     const navigate = useNavigate();
@@ -19,7 +19,7 @@ export default function ResetPasswordPage() {
         setError(''); setInfo('');
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+            const res = await fetch(`${BASE_URL}:8888/api/auth/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, newPassword })
