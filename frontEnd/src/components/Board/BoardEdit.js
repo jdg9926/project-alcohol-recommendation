@@ -10,7 +10,7 @@ export default function BoardEdit() {
 
     // 기존 내용 불러오기
     useEffect(() => {
-        fetch(`http://3.36.66.231:8888/api/board/${id}`)
+        fetch(`http://43.200.182.46:8888/api/board/${id}`)
             .then(res => res.json())
             .then(data => setForm({ title: data.title, content: data.content }))
             .finally(() => setLoading(false));
@@ -23,7 +23,7 @@ export default function BoardEdit() {
     const handleSubmit = async e => {
         e.preventDefault();
         try {
-            const res = await fetch(`http://3.36.66.231:8888/api/board/${id}`, {
+            const res = await fetch(`http://43.200.182.46:8888/api/board/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),

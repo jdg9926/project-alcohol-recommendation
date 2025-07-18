@@ -1,4 +1,4 @@
-const BASE_URL = "http://3.36.66.231:8888";
+const BASE_URL = "http://43.200.182.46:8888";
 
 export async function signup({ userId, nickname, password, email }) {
     const res = await fetch(`${BASE_URL}/api/auth/signup`, {

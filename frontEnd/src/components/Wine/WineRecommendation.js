@@ -22,7 +22,7 @@ const WineRecommendation = () => {
 
   const getRecommendation = async () => {
     try {
-      const response = await axios.post('http://3.36.66.231:8000/recommend', formData);
+      const response = await axios.post('http://43.200.182.46:8000/recommend', formData);
       setRecommendation(response.data.recommendation);
     } catch (error) {
       console.error(error);

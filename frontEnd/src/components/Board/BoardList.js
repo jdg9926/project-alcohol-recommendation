@@ -24,7 +24,7 @@ export default function BoardList() {
 
     useEffect(() => {
         setLoading(true);
-        let url = `http://3.36.66.231:8888/api/board/list?page=${page}&size=${size}&sort=createdAt,${sortOrder}`;
+        let url = `http://43.200.182.46:8888/api/board/list?page=${page}&size=${size}&sort=createdAt,${sortOrder}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
         fetch(url)
             .then(res => {

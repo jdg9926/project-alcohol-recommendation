@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Error from "../Common/Error";
 
-const API_BASE_URL = "http://3.36.66.231:8888";
+const API_BASE_URL = "http://43.200.182.46:8888";
 
 export default function FindPasswordPage() {
     const [userId, setUserId] = useState('');
