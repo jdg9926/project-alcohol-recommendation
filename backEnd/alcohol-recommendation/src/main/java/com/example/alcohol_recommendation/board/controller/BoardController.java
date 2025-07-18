@@ -30,7 +30,7 @@ public class BoardController {
 
     @GetMapping("/list")
     public Page<Board> getBoardList(@RequestParam(name = "search", required = false) String search, Pageable pageable) {
-    	System.out.println("들어오니");
+    	System.out.println("들어오니?");
         if (search != null && !search.trim().isEmpty()) {
             // 제목 또는 작성자에 search가 포함된 글만
             return boardRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(search, search, pageable);
