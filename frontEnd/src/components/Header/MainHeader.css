@@ -1,4 +1,4 @@
-/* 전역 리셋 - 헤더를 완전히 붙이기 위해 필요 */
+/* 전역 리셋 + 폰트 */
 * {
     margin: 0;
     padding: 0;
@@ -8,31 +8,34 @@
 body {
     margin: 0;
     padding: 0;
+    font-family: 'Noto Sans KR', 'Arial', sans-serif;
 }
 
+/* 헤더 스타일 */
 .main-header {
     display: flex;
     align-items: center;
-    background-color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(224, 62, 62, 0.08), 0 1.5px 5px rgba(0,0,0,0.07);
     border-bottom: 2px solid #e03e3e;
     border-radius: 0 0 12px 12px;
     min-height: 68px;
-    
-    /* 브라우저 화면에 완전히 붙이기 */
     width: 100vw;
-    margin: 0;
     padding: 0 20px;
-    box-sizing: border-box;
     margin-left: calc(-50vw + 50%);
+    z-index: 10;
+    /* (필요시) 고정하려면 아래 주석 해제
+    position: fixed;
+    top: 0;
+    left: 0;
+    */
 }
 
-/* 네비게이션(메인/게시판) 중앙 정렬 느낌 */
 .header-nav-links {
     display: flex;
     justify-content: center;
     align-items: center;
-    flex: 1; /* 네비게이션이 남은 공간 차지 */
+    flex: 1;
     gap: 28px;
     font-size: 1.18rem;
     font-weight: 600;
@@ -46,69 +49,102 @@ body {
     border-radius: 18px;
     transition: background 0.2s, color 0.2s;
 }
-
 .nav-link:hover,
 .nav-link.active {
     background: #ffe5e5;
     color: #e03e3e;
 }
 
-/* 로그인/회원가입/로그아웃 버튼 묶음 */
+/* 버튼 공통 스타일 */
+.header-btn {
+    font-family: 'Noto Sans KR', 'Arial', sans-serif;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 8px 18px;
+    border-radius: 24px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.03);
+    cursor: pointer;
+}
+
+/* 개별 버튼 스타일 */
+.signup-button {
+    background-color: #fff;
+    color: #e03e3e;
+    border: 1px solid #e03e3e;
+    box-shadow: 0 3px 8px rgba(0, 170, 255, 0.1);
+}
+.signup-button:hover {
+    background-color: #ffe5e5;
+    transform: translateY(-2px);
+}
+.login-button {
+    background-color: #fff;
+    color: #2563eb;
+    border: 1px solid #2563eb;
+}
+.login-button:hover {
+    background: #e6f0ff;
+    color: #1741b6;
+}
+.logout-button {
+    background-color: #ff4d4d;
+    color: #fff;
+    border: 1px solid #ff4d4d;
+    box-shadow: 0 3px 8px rgba(255, 77, 77, 0.12);
+}
+.logout-button:hover {
+    background-color: #b82b2b;
+    border-color: #b82b2b;
+}
+.mypage-button {
+    background-color: #f8fafc;
+    color: #2463eb;
+    border: 1px solid #2463eb;
+    box-shadow: 0 3px 8px rgba(36, 99, 235, 0.09);
+    transition: all 0.18s;
+}
+.mypage-button:hover {
+    background: #e6f0ff;
+    color: #1741b6;
+    border-color: #2563eb;
+    transform: translateY(-2px);
+}
+
+/* 로그인/회원가입/로그아웃/마이페이지 버튼 묶음 */
 .header-auth-buttons {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-/* 아래 버튼들은 기존과 동일, 폰트 통일만 추가 */
-.signup-button, .login-button, .logout-button {
-    font-family: 'Noto Sans KR', 'Arial', sans-serif; /* 폰트 통일 */
+/* 닉네임 표시 (선택, 스타일 커스텀 가능) */
+.user-nickname {
+    margin-right: 8px;
+    color: #555;
+    font-size: 1.07rem;
+    font-weight: 500;
 }
 
-/* ... 이하 기존 버튼 스타일 유지 ... */
-.signup-button {
-    background-color: #ffffff;
-    color: #e03e3e;
-    border: 1px solid #e03e3e;
-    padding: 8px 18px;
-    border-radius: 24px;
-    text-decoration: none;
-    font-weight: bold;
-    box-shadow: 0 3px 8px rgba(0, 170, 255, 0.2);
-    transition: all 0.2s ease-in-out;
-}
-.signup-button:hover {
-    background-color: #ffe5e5;
-    transform: translateY(-2px);
-}
-
-.login-button {
-    background-color: #e03e3e;
-    color: white;
-    padding: 8px 18px;
-    border-radius: 24px;
-    text-decoration: none;
-    font-weight: bold;
-    box-shadow: 0 3px 8px rgba(0, 170, 255, 0.2);
-    transition: all 0.2s ease-in-out;
-}
-.login-button:hover {
-    background-color: #b82b2b;
-    transform: translateY(-2px);
-}
-
-.logout-button {
-    background-color: #ff4d4d;
-    color: #ffffff;
-    border: 1px solid #ff4d4d;
-    padding: 8px 18px;
-    border-radius: 24px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 3px 8px rgba(255, 77, 77, 0.2);
-    transition: all 0.2s ease-in-out;
-}
-.logout-button:hover {
-    background-color: #b82b2b;
-    border-color: #b82b2b;
+/* 반응형 */
+@media (max-width: 600px) {
+    .main-header {
+        flex-direction: column;
+        padding: 0 8px;
+        min-height: 58px;
+    }
+    .header-nav-links {
+        gap: 12px;
+        font-size: 1rem;
+    }
+    .header-auth-buttons .header-btn {
+        padding: 7px 12px;
+        font-size: 0.95rem;
+    }
+    .user-nickname {
+        font-size: 0.95rem;
+        margin-right: 5px;
+    }
 }

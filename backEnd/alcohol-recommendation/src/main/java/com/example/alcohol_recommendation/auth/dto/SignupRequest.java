@@ -23,7 +23,7 @@ public class SignupRequest {
 	private String userId;
 	
 	@NotBlank(message = "username must not be blank") 
-	@Size(min = 6, max = 16, message = "nickname length must be between 6 and 16")
+	@Size(min = 2, max = 16, message = "nickname length must be between 2 and 16")
 	private String nickname;
 	
     @NotBlank(message = "email must not be blank")

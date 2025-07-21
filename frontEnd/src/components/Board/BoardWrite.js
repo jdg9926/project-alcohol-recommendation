@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import { BASE_URL } from "../../api/baseUrl";
 import { logErrorToBoard } from "../../utils/errorLogger";
+
+import { useContext } from "react";
+import { AuthContext } from "../../AuthContext";
 
 import "react-quill/dist/quill.snow.css";
 import "./Board.css";
@@ -13,19 +16,57 @@ export default function BoardWrite() {
     const [files, setFiles] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isDragActive, setIsDragActive] = useState(false);
+    const fileInputRef = useRef(null);
     const navigate = useNavigate();
 
+    const { loginToken, user } = useContext(AuthContext);
+
+    // 파일 제한 상수
+    const MAX_FILES = 5;
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
     // Drag & Drop 핸들러
-    const handleDrop = (e) => {
+    const handleDragOver = useCallback((e) => {
         e.preventDefault();
+        setIsDragActive(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e) => {
+        e.preventDefault();
+        setIsDragActive(false);
+    }, []);
+
+    // 파일 추가(중복/용량/갯수 제한)
+    const addFiles = useCallback((newFiles) => {
+        let updated = [...files];
+        for (const file of newFiles) {
+            if (updated.length >= MAX_FILES) {
+                alert(`최대 ${MAX_FILES}개까지 등록할 수 있습니다.`);
+                break;
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                alert(`${file.name} 파일은 10MB를 초과하여 첨부할 수 없습니다.`);
+                continue;
+            }
+            if (updated.find(f => f.name === file.name && f.size === file.size)) continue;
+            updated.push(file);
+        }
+        if (updated.length > MAX_FILES) updated = updated.slice(0, MAX_FILES);
+        setFiles(updated);
+    }, [files, MAX_FILES, MAX_FILE_SIZE]);
+
+    const handleDrop = useCallback((e) => {
+        e.preventDefault();
+        setIsDragActive(false);
         const droppedFiles = Array.from(e.dataTransfer.files);
-        setFiles(prev => [...prev, ...droppedFiles]);
-    };
-    const handleDragOver = (e) => e.preventDefault();
+        addFiles(droppedFiles);
+    }, [addFiles]);
 
     // 파일 선택 핸들러
     const handleFileChange = (e) => {
-        setFiles(prev => [...prev, ...Array.from(e.target.files)]);
+        addFiles(Array.from(e.target.files));
+        e.target.value = "";
     };
 
     // 파일 미리보기 삭제
@@ -33,6 +74,17 @@ export default function BoardWrite() {
         setFiles(prev => prev.filter((_, i) => i !== index));
     };
 
+    // 파일 미리보기(이미지용) - 선택사항
+    const [previews, setPreviews] = useState([]);
+    useEffect(() => {
+        const imagePreviews = files.map(file =>
+            file.type.startsWith("image/") ? URL.createObjectURL(file) : null
+        );
+        setPreviews(imagePreviews);
+        return () => imagePreviews.forEach(url => url && URL.revokeObjectURL(url));
+    }, [files]);
+
+    // 폼 제출
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -53,14 +105,16 @@ export default function BoardWrite() {
             const formData = new FormData();
             formData.append("title", title);
             formData.append("content", content);
-            formData.append("author", "익명");
+            formData.append("author", user?.nickname);
             files.forEach((file) => {
                 formData.append("files", file);
             });
 
-            // 실제 요청 (Content-Type 생략!)
             const response = await fetch(apiPath, {
                 method: "POST",
+                headers: {
+                    "Authorization": loginToken ? `Bearer ${loginToken}` : undefined
+                },
                 body: formData,
             });
 
@@ -99,8 +153,6 @@ export default function BoardWrite() {
             setLoading(false);
         }
     };
-
-
 
     // 툴바 커스터마이즈
     const quillModules = {
@@ -141,29 +193,57 @@ export default function BoardWrite() {
 
                 {/* Drag & Drop 파일 업로드 */}
                 <div
-                    className="file-dropzone"
+                    className={`file-dropzone${isDragActive ? " drag-active" : ""}`}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDragEnter={handleDragOver}
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => !loading && fileInputRef.current.click()}
+                    style={{ outline: isDragActive ? "2px solid #2563eb" : "none" }}
                 >
                     파일을 이곳에 드래그하거나{" "}
-                    <label htmlFor="fileInput" style={{ color: "#2563eb", textDecoration: "underline", cursor: "pointer" }}>
-                        여기
-                    </label>
+                    <span
+                        style={{
+                            color: "#2563eb",
+                            textDecoration: "underline",
+                            cursor: "pointer"
+                        }}
+                        onClick={e => {
+                            e.stopPropagation();
+                            !loading && fileInputRef.current.click();
+                        }}
+                    >여기</span>
                     를 클릭해 첨부하세요.
                     <input
+                        ref={fileInputRef}
                         id="fileInput"
                         type="file"
                         multiple
                         style={{ display: "none" }}
                         onChange={handleFileChange}
                         disabled={loading}
+                        accept="*"
                     />
+                    <span className="file-info">
+                        (최대 {MAX_FILES}개, 10MB 이하 파일만 첨부)
+                    </span>
                 </div>
 
                 {/* 파일 미리보기 */}
                 <ul className="file-preview-list">
                     {files.map((file, i) => (
                         <li key={i} className="file-preview-item">
+                            {previews[i] ? (
+                                <img
+                                    src={previews[i]}
+                                    alt={file.name}
+                                    className="file-thumb"
+                                />
+                            ) : (
+                                <span className="file-icon" style={{ marginRight: 8 }}>📎</span>
+                            )}
                             <span>{file.name}</span>
                             <button
                                 type="button"

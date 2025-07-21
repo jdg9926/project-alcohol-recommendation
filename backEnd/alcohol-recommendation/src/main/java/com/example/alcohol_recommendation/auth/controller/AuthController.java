@@ -45,7 +45,6 @@ public class AuthController {
 	public Map<String,String> findUsername(@RequestBody Map<String,String> req) {
 		String email = req.get("email");
 		String userId = authService.findUsernameByUserId(email);
-		System.out.println("userId :::: " + userId);
 		return Map.of("userId", userId);
   	}
 

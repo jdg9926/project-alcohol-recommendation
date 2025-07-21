@@ -1,4 +1,4 @@
-package com.example.alcohol_recommendation.auth.security;
+package com.example.alcohol_recommendation.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,14 +42,16 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                 		"/",
-                        "/api/auth/signup", 
-                        "/api/auth/login",
-                        "/api/auth/find-userId",
-                        "/api/auth/reset-password-request",
-                        "/api/auth/reset-password",
-                        "/board/**",
-                        "/api/users/**",
-                        "/api/**"
+                        "/api/auth/**",
+                        "/api/users/check-id",
+                        "/api/users/check-nickname",
+                        "/api/users/send-verification",
+                        "/api/users/verify-code",
+                        // 공개 허용 - 조회성 API
+                        "/api/board/list",
+                        "/api/board/{id:[0-9]+}",
+                        "/api/board/{id:[0-9]+}/comments",
+                        "/api/board/download/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

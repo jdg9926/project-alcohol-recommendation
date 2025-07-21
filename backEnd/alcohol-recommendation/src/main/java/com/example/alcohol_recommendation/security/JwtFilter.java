@@ -1,4 +1,4 @@
-package com.example.alcohol_recommendation.auth.security;
+package com.example.alcohol_recommendation.security;
 
 import java.io.IOException;
 import java.security.Key;
@@ -41,7 +41,7 @@ public class JwtFilter extends OncePerRequestFilter {
                                 .getBody();
 
             String userId = claims.getSubject();
-            var auth = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+            var auth = new UsernamePasswordAuthenticationToken(String.valueOf(userId), null, Collections.emptyList());
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
         chain.doFilter(req, res);

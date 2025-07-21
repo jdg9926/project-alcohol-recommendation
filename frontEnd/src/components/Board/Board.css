@@ -211,6 +211,35 @@
     outline: none;
 }
 
+/* 좋아요/스크랩 컬럼 스타일 */
+.like-badge {
+    color: #e03e3e;
+    font-weight: 600;
+    font-size: 1.07em;
+    letter-spacing: -1px;
+}
+.scrap-badge {
+    color: #2563eb;
+    font-weight: 600;
+    font-size: 1.07em;
+    letter-spacing: -1px;
+}
+.board-table th,
+.board-table td {
+    text-align: center;
+    vertical-align: middle;
+}
+.board-title-cell {
+    text-align: left !important;
+}
+
+.comment-badge {
+    color: #0f8fbd;
+    font-weight: 600;
+    font-size: 1.07em;
+    letter-spacing: -1px;
+}
+
 /* ===== 상세 ===== */
 .board-detail-card {
     min-height: 520px;
@@ -308,6 +337,51 @@
     font-weight: bold;
 }
 
+.board-attachments {
+    margin-top: 22px;
+    padding: 16px 0 2px 0;
+    border-bottom: 1px solid #f1f3f8;
+    font-size: 1.06rem;
+    color: #444;
+}
+
+.attachment-list {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.attachment-link {
+    color: #2563eb;
+    text-decoration: underline;
+    margin-right: 16px;
+    font-size: 1.08em;
+}
+
+.attachment-link:hover {
+    color: #e03e3e;
+}
+
+.board-like-scrap-bar {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.like-btn, .scrap-btn {
+    border: none;
+    background: none;
+    font-size: 22px;
+    color: #aaa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.16s;
+}
+.like-btn.on { color: #e03e3e; }
+.scrap-btn.on { color: #2563eb; }
+
 /* ===== 글쓰기 ===== */
 .board-write-form {
     margin: 40px auto 0 auto;
@@ -398,10 +472,14 @@
     border-radius: 8px;
     text-align: center;
     margin-bottom: 12px;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s;
 }
 .file-dropzone:hover {
     background: #f1f5f9;
+}
+.file-dropzone.drag-active {
+    background: #e0edfd;
+    border-color: #2563eb;
 }
 .file-preview-list {
     list-style: none;
@@ -410,15 +488,21 @@
 }
 .file-preview-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 4px 0;
 }
 .file-remove-btn {
+    margin-left: auto;
     background: none;
     color: #ef4444;
     border: none;
     cursor: pointer;
     font-size: 14px;
-    margin-left: 6px;
+}
+.file-thumb {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 8px;
 }

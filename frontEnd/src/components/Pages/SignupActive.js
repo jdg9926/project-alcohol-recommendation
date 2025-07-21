@@ -19,11 +19,25 @@ export const checkUserIdDuplicate = async (userId, setIsUserIdChecked) => {
 
     try {
         const res = await fetch(`${BASE_URL}:8888/api/users/check-id?userId=${userId}`);
-        const exists = await res.json();
+        if (!res.ok) {
+            alert("서버 오류가 발생했습니다.");
+            return;
+        }
+        // JSON 파싱 전 텍스트 확인
+        const text = await res.text();
+        if (!text) {
+            alert("서버가 빈 응답을 반환했습니다.");
+            return;
+        }
+        let exists;
+        try {
+            exists = JSON.parse(text);
+        } catch {
+            alert("서버 응답이 올바르지 않습니다.");
+            return;
+        }
 
         alert(exists ? '이미 사용 중인 아이디입니다.' : '사용 가능한 아이디입니다!');
-
-        // 상태 반영
         if (!exists) setIsUserIdChecked(true);
     } catch (err) {
         console.error('아이디 중복 확인 오류:', err);
@@ -41,8 +55,8 @@ export const checkNicknameDuplicate = async (nickname, setIsNicknameChecked) => 
         alert("사용할 수 없는 닉네임입니다.");
         return;
     }
-    if (nickname.length < 6 || nickname.length > 16 || !/^[가-힣a-zA-Z0-9]+$/.test(nickname)) {
-        alert("닉네임은 6~16자 한글/영문/숫자만 가능합니다.");
+    if (nickname.length <= 2 || nickname.length >= 16 || !/^[가-힣a-zA-Z0-9]+$/.test(nickname)) {
+        alert("닉네임은 2~16자 한글/영문/숫자만 가능합니다.");
         return;
     }
 

@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-
 import { BASE_URL } from "../../api/baseUrl";
-
 import "./Board.css";
 
 export default function BoardList() {
@@ -71,46 +69,55 @@ export default function BoardList() {
                         <th className="board-col-title">제목</th>
                         <th className="board-col-author">작성자</th>
                         <th className="board-col-date">작성일</th>
+                        <th style={{width:"10%"}}>♥</th>
+                        <th style={{width:"10%"}}>💬</th>
                     </tr>
                 </thead>
                 <tbody>
                     {loading ? (
                         <tr>
-                            <td className="board-empty-row" colSpan={4}>
+                            <td className="board-empty-row" colSpan={6}>
                                 <span style={{ fontSize: 18, color: "#aaa" }}>불러오는 중...</span>
                             </td>
                         </tr>
                     ) : error ? (
                         <tr>
-                            <td className="board-empty-row" colSpan={4}>
+                            <td className="board-empty-row" colSpan={6}>
                                 <span style={{ color: "#e03e3e" }}>{error}</span>
                             </td>
                         </tr>
                     ) : posts.length === 0 ? (
                         <tr>
-                            <td className="board-empty-row" colSpan={4}>
+                            <td className="board-empty-row" colSpan={6}>
                                 <span style={{ fontSize: 32, marginRight: 8 }}>📄</span>
                                 게시글이 없습니다
                             </td>
                         </tr>
                     ) : (
                         posts.map((post, idx) => (
-                        <tr key={post.id}>
-                            <td>
-                                {totalElements - (page * size + idx)}
-                            </td>
-                            <td className="board-title-cell board-col-title">
-                                <Link to={`${post.id}`} className="board-link">
-                                    {post.title}
-                                </Link>
-                            </td>
-                            <td className="board-col-author">
-                                {post.author}
-                            </td>
-                            <td className="board-col-date">
-                                {post.createdAt ? post.createdAt.substring(0, 16).replace("T", " ") : ""}
-                            </td>
-                        </tr>
+                            <tr key={post.id}>
+                                <td>
+                                    {totalElements - (page * size + idx)}
+                                </td>
+                                <td className="board-title-cell board-col-title">
+                                    <Link to={`${post.id}`} className="board-link">
+                                        {post.title}
+                                    </Link>
+                                </td>
+                                <td className="board-col-author">
+                                    {post.author}
+                                </td>
+                                <td className="board-col-date">
+                                    {post.createdAt ? post.createdAt.substring(0, 16).replace("T", " ") : ""}
+                                </td>
+                                {/* 좋아요/댓글 */}
+                                <td>
+                                    <span className="like-badge">{post.likeCount ?? 0}</span>
+                                </td>
+                                <td>
+                                    <span className="comment-badge">{post.commentCount ?? 0}</span>
+                                </td>
+                            </tr>
                         ))
                     )}
                 </tbody>
@@ -157,7 +164,6 @@ export default function BoardList() {
                         >×</button>
                     )}
                 </div>
-
                 <button 
                     onClick={() =>  {
                         setSearch(searchInput);
@@ -175,6 +181,5 @@ export default function BoardList() {
                 </button>
             </div>
         </div>
-        
     );
 }

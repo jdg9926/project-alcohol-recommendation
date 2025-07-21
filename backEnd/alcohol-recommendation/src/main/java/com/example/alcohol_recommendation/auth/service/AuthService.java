@@ -61,7 +61,7 @@ public class AuthService {
 
 		byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
 		String token = Jwts.builder()
-				.setSubject(u.getUserId().toString())
+				.setSubject(String.valueOf(u.getSeq()))
 				.setIssuedAt(new Date())
 				.setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
 				.signWith(Keys.hmacShaKeyFor(keyBytes), SignatureAlgorithm.HS512)
@@ -79,9 +79,9 @@ public class AuthService {
 		return new LoginResponse(token, ur);
 	}
 
-	public User getMe(String userId) {
-		return userRepo.findByUserId(userId)
-				.orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+	public User getMe(String seq) {
+	    Long userSeq = Long.parseLong(seq);
+	    return userRepo.findById(userSeq).orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 	}
 	
     // ① 이메일로 아이디 찾기

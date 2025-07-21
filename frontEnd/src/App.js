@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
 
 import MainHeaders from "./components/Header/MainHeader";
 import LoginPage from "./components/Pages/LoginPage.js";
@@ -10,6 +10,8 @@ import ResetPasswordPage from './components/Pages/ResetPasswordPage';
 import WineRecommendForm from "./components/Wine/WineRecommendForm";
 import WineRecommendResult from "./components/Wine/WineRecommendResult";
 import BoardPage from './components/Board/BoardPage';
+
+import MyPage from "./components/MyPage/MyPage.js";
 
 function App() {
     const [result, setResult] = useState(null);
@@ -33,6 +35,8 @@ function App() {
                 <Route path="/find-password" element={<FindPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/board/*" element={<BoardPage />} />
+
+                <Route path="/mypage/*" element={<MyPage />} />
             </Routes>
         </>
     );

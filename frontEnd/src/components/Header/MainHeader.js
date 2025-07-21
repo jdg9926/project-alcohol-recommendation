@@ -1,41 +1,56 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../../AuthContext';
 import './MainHeader.css';
 
-const MainHeaders = () => {
+const MainHeader = () => {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         navigate('/login');
     };
 
     return (
         <header className="main-header">
-            {/* 상단 네비게이션 탭 */}
-            <nav className="header-nav-links">
-                <Link to="/" className="nav-link">
+            <nav className="header-nav-links" aria-label="메인 네비게이션">
+                <NavLink
+                    to="/"
+                    className={({ isActive }) =>
+                        'nav-link' + (isActive && window.location.pathname === '/' ? ' active' : '')
+                    }
+                    end
+                >
                     와인 추천
-                </Link>
-                <Link to="/board" className="nav-link">
+                </NavLink>
+                <NavLink
+                    to="/board"
+                    className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
+                >
                     게시판
-                </Link>
+                </NavLink>
             </nav>
             <div className="header-auth-buttons">
                 {user ? (
-                    <button onClick={handleLogout} className="logout-button">
-                        로그아웃
-                    </button>
+                    <>
+                        {/* (선택) 사용자 닉네임 표시 */}
+                        <span className="user-nickname">{user.nickname}님</span>
+                        <NavLink to="/mypage" className="header-btn mypage-button">
+                            마이페이지
+                        </NavLink>
+                        <button onClick={handleLogout} className="header-btn logout-button">
+                            로그아웃
+                        </button>
+                    </>
                 ) : (
                     <>
-                        <Link to="/signup" className="signup-button">
+                        <NavLink to="/signup" className="header-btn signup-button">
                             회원가입
-                        </Link>
-                        <Link to="/login" className="login-button">
+                        </NavLink>
+                        <NavLink to="/login" className="header-btn login-button">
                             로그인
-                        </Link>
+                        </NavLink>
                     </>
                 )}
             </div>
@@ -43,4 +58,4 @@ const MainHeaders = () => {
     );
 };
 
-export default MainHeaders;
+export default MainHeader;
