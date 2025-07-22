@@ -92,34 +92,33 @@ export default function BoardDetail() {
         }
     });
 
-const handleScrap = requireLogin(async () => {
-    // 스크랩된 상태라면 먼저 확인창!
-    if (scrapped) {
-        const confirmCancel = window.confirm("스크랩을 취소하겠습니까?");
-        if (!confirmCancel) return; // 사용자가 취소 선택 시 아무것도 안함
-    }
-
-    const res = await fetch(`${BASE_URL}:8888/api/board/${id}/scrap`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-    });
-
-    if (res.ok) {
-        const data = await res.json();
-        setScrapped(data.scrapped);
-
-        // 안내 메시지(선택)
-        if (data.scrapped) {
-            alert("스크랩이 등록되었습니다.");
-        } else {
-            alert("스크랩이 취소되었습니다.");
+    const handleScrap = requireLogin(async () => {
+        if (scrapped) {
+            const confirmCancel = window.confirm("스크랩을 취소하겠습니까?");
+            if (!confirmCancel) return; // 사용자가 취소 선택 시 아무것도 안함
         }
-    } else {
-        alert("스크랩 처리 실패");
-    }
-});
+
+        const res = await fetch(`${BASE_URL}:8888/api/board/${id}/scrap`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            setScrapped(data.scrapped);
+
+            // 안내 메시지(선택)
+            if (data.scrapped) {
+                alert("스크랩이 등록되었습니다.");
+            } else {
+                alert("스크랩이 취소되었습니다.");
+            }
+        } else {
+            alert("스크랩 처리 실패");
+        }
+    });
 
     if (loading) {
         return <div className="board-detail-card"><div className="board-detail-loading">불러오는 중...</div></div>;
