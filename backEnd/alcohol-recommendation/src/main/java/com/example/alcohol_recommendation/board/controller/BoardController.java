@@ -93,7 +93,7 @@ public class BoardController {
 	public Board createBoard(Principal principal,
 							 @RequestPart("title") String title,
 							 @RequestPart("content") String content,
-							 @RequestPart("author") String author,
+//							 @RequestPart("author") String author,
 							 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
     	
 	    if (title == null || title.trim().isEmpty()) {
@@ -106,13 +106,14 @@ public class BoardController {
 	    Board board = new Board();
 	    board.setTitle(title);
 	    board.setContent(content);
-	    board.setAuthor(author);
+//	    board.setAuthor(author);
 	    board.setCreatedAt(LocalDateTime.now());
 	    
 	    Long userSeq = Long.parseLong(principal.getName());
 	    User user = userRepository.findById(userSeq)
 	        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보 오류"));
 	    board.setUser(user);
+	    board.setAuthor(user.getNickname());
 
 	    // 파일 저장
 	    if (files != null && !files.isEmpty()) {

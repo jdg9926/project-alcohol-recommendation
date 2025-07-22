@@ -105,7 +105,7 @@ export default function BoardWrite() {
             const formData = new FormData();
             formData.append("title", title);
             formData.append("content", content);
-            formData.append("author", user?.nickname);
+            // formData.append("author", user?.nickname);
             files.forEach((file) => {
                 formData.append("files", file);
             });
