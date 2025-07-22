@@ -22,16 +22,6 @@ jobs:
           source: "./python"                # 깃허브 레포 기준 폴더명!
           target: "/home/ubuntu/python"     # EC2에서 사용할 경로
 
-      # (선택) Google API Key 따로 복사 필요시
-      # - name: Copy Google API Key to EC2
-      #   uses: appleboy/scp-action@v0.1.7
-      #   with:
-      #     host: ${{ secrets.EC2_HOST }}
-      #     username: ${{ secrets.EC2_USER }}
-      #     key: ${{ secrets.EC2_KEY }}
-      #     source: "./python/qna-ai-proejct-5fd3a30365dd.json"
-      #     target: "/home/ubuntu/genai-key.json"
-
       - name: Install dependencies and Run FastAPI on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
