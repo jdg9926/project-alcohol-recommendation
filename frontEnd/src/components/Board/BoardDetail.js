@@ -124,7 +124,6 @@ export default function BoardDetail() {
             </div>
         );
     }
-
     
     const hasFiles = post.fileNames && post.fileNames.length > 0;
     const isAuthor = user && user.nickname === post.author; // 본인 확인

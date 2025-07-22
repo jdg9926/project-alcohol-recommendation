@@ -2,7 +2,7 @@ package com.example.alcohol_recommendation.board.controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriUtils;
 
 import com.example.alcohol_recommendation.auth.model.User;
 import com.example.alcohol_recommendation.auth.repository.UserRepository;
@@ -86,7 +87,59 @@ public class BoardController {
         return new BoardResponse(board, liked);
     }
     
-    // 글쓰기
+
+    // 등록(글쓰기)
+    @PostMapping(value = "/write", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public Board createBoard(Principal principal,
+							 @RequestPart("title") String title,
+							 @RequestPart("content") String content,
+							 @RequestPart("author") String author,
+							 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+    	
+	    if (title == null || title.trim().isEmpty()) {
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "제목은 필수입니다.");
+	    }
+	    if (content == null || content.trim().isEmpty()) {
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "내용은 필수입니다.");
+	    }
+
+	    Board board = new Board();
+	    board.setTitle(title);
+	    board.setContent(content);
+	    board.setAuthor(author);
+	    board.setCreatedAt(LocalDateTime.now());
+	    
+	    Long userSeq = Long.parseLong(principal.getName());
+	    User user = userRepository.findById(userSeq)
+	        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보 오류"));
+	    board.setUser(user);
+
+	    // 파일 저장
+	    if (files != null && !files.isEmpty()) {
+	    	String uploadDir = System.getProperty("user.dir") + File.separator + "uploads";
+	        try {
+	            Files.createDirectories(Paths.get(uploadDir)); // 폴더 생성(최초 1회만)
+	            for (MultipartFile file : files) {
+	                if (!file.isEmpty()) {
+	                    String originalFilename = file.getOriginalFilename();
+	                    String ext = "";
+	                    if (originalFilename != null && originalFilename.contains(".")) {
+	                        ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+	                    }
+	                    String saveFilename = UUID.randomUUID().toString() + ext;
+	                    Path savePath = Paths.get(uploadDir, saveFilename);
+	                    file.transferTo(savePath.toFile());
+	                    board.addFile(saveFilename, originalFilename);
+	                }
+	            }
+	        } catch (IOException e) {
+	            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장 실패", e);
+	        }
+	    }
+	    return boardRepository.save(board);
+	}
+    
+    // 수정
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BoardResponse updateBoard(
     		Principal principal,
@@ -113,7 +166,6 @@ public class BoardController {
     	System.out.println("principal.getName() = " + principal.getName());
     	System.out.println("board.getUser().getSeq() = " + board.getUser().getSeq());
         
-        // 본인 여부 체크 ★★★
         Long loginUserSeq = Long.parseLong(principal.getName());
         if (!board.getUser().getSeq().equals(loginUserSeq)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인만 수정할 수 있습니다.");
@@ -201,6 +253,24 @@ public class BoardController {
 
         boardRepository.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+    
+    @GetMapping("/download/{fileName:.+}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable("fileName") String fileName,
+    											 @RequestParam(value = "originName", required = false) String originName) {
+        String uploadDir = System.getProperty("user.dir") + File.separator + "uploads";
+        Path filePath = Paths.get(uploadDir, fileName);
+
+        if (!Files.exists(filePath)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "파일이 존재하지 않습니다.");
+        }
+
+        Resource resource = new FileSystemResource(filePath);
+        String downloadName = (originName != null && !originName.isBlank()) ? originName : fileName;
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + UriUtils.encode(downloadName, StandardCharsets.UTF_8) + "\"")
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .body(resource);
     }
     
     // 좋아요 API
