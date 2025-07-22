@@ -96,8 +96,19 @@ public class MyPageController {
         Long userSeq = Long.parseLong(principal.getName());
         User user = userRepository.findById(userSeq)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "유저를 찾을 수 없습니다."));
+
+        // 1. 닉네임 변경
         user.setNickname(nickname);
         userRepository.save(user);
+
+        // 2. 본인이 쓴 모든 게시글의 author 닉네임도 일괄 변경
+        List<Board> myBoards = boardRepository.findByUser(user);
+        for (Board board : myBoards) {
+            board.setAuthor(nickname);
+        }
+        boardRepository.saveAll(myBoards);
+
+        // 3. 응답
         return new UserResponse(user);
     }
     

@@ -40,8 +40,10 @@ import com.example.alcohol_recommendation.board.dto.BoardResponse;
 import com.example.alcohol_recommendation.board.dto.PagedResponse;
 import com.example.alcohol_recommendation.board.model.Board;
 import com.example.alcohol_recommendation.board.model.BoardLike;
+import com.example.alcohol_recommendation.board.model.Scrap;
 import com.example.alcohol_recommendation.board.repository.BoardLikeRepository;
 import com.example.alcohol_recommendation.board.repository.BoardRepository;
+import com.example.alcohol_recommendation.board.repository.ScrapRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,7 +54,8 @@ public class BoardController {
     private final BoardRepository boardRepository;
     private final BoardLikeRepository boardLikeRepository;
     private final UserRepository userRepository;
-
+    private final ScrapRepository scrapRepository;
+    
     @GetMapping("/list")
     public PagedResponse<BoardResponse> getBoardList(@RequestParam(name = "search", required = false) String search, Pageable pageable) {
         Page<BoardResponse> page;
@@ -76,17 +79,19 @@ public class BoardController {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글이 존재하지 않습니다."));
 
         boolean liked = false;
+        boolean scrapped = false;
+
         if (principal != null) { // 로그인 했을 때만 체크
             Long userSeq = Long.parseLong(principal.getName());
             User user = userRepository.findById(userSeq)
                 .orElse(null);
             if (user != null) {
                 liked = boardLikeRepository.existsByBoardAndUser(board, user);
+                scrapped = scrapRepository.existsByUserAndBoard(user, board);
             }
         }
-        return new BoardResponse(board, liked);
+        return new BoardResponse(board, liked, scrapped);
     }
-    
 
     // 등록(글쓰기)
     @PostMapping(value = "/write", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -294,8 +299,6 @@ public class BoardController {
         Optional<BoardLike> existingLike = boardLikeRepository.findByBoardAndUser(board, user);
 
         boolean liked;
-        System.out.println("existingLike :::" + existingLike);
-        System.out.println("existingLike :::" + existingLike.isPresent());
         if (existingLike.isPresent()) {
             // 이미 누른 상태면 → 좋아요 취소
             boardLikeRepository.delete(existingLike.get());
@@ -314,5 +317,33 @@ public class BoardController {
         boardRepository.save(board);
 
         return new BoardResponse(board, liked);
+    }
+    
+    @PostMapping("/{id}/scrap")
+    public BoardResponse scrapBoard(@PathVariable("id") Long id, Principal principal) {
+        Board board = boardRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글이 존재하지 않습니다."));
+
+        Long userSeq = Long.parseLong(principal.getName());
+        User user = userRepository.findById(userSeq)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "유저를 찾을 수 없습니다."));
+
+        // 이미 스크랩했는지 확인
+        Optional<Scrap> existingScrap = scrapRepository.findByUserAndBoard(user, board);
+
+        Scrap scrap = null;
+        if (existingScrap.isPresent()) {
+            // 이미 스크랩 → 취소
+            scrapRepository.delete(existingScrap.get());
+        } else {
+            // 아직 안 했으면 → 등록
+            scrap = new Scrap();
+            scrap.setBoard(board);
+            scrap.setUser(user);
+            scrap.setCreatedAt(LocalDateTime.now());
+            scrapRepository.save(scrap);
+        }
+
+        return new BoardResponse(board, scrap);
     }
 }

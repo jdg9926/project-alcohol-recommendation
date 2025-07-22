@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ReactQuill from "react-quill";
+import ReactQuill from "react-quill-new";
 import { BASE_URL } from "../../api/baseUrl";
 
 import { useContext } from "react";
 import { AuthContext } from "../../AuthContext";
 
-import "react-quill/dist/quill.snow.css";
+import "react-quill-new/dist/quill.snow.css";
 import "./Board.css";
 
 export default function BoardWrite() {

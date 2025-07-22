@@ -24,7 +24,6 @@ export default function BoardDetail() {
 
     const [likeCount, setLikeCount] = useState(0);
     const [liked, setLiked] = useState(false);
-    const [scrapCount, setScrapCount] = useState(0);
     const [scrapped, setScrapped] = useState(false);
 
     // 비로그인 보호용 핸들러
@@ -49,8 +48,8 @@ export default function BoardDetail() {
                 console.log("data :::", data);
                 setPost(data);
                 setLikeCount(data.likeCount ?? 0);
-                setScrapCount(data.scrapCount ?? 0);
                 setLiked(data.liked ?? false);
+                setScrapped(data.scrapped ?? false);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -86,7 +85,6 @@ export default function BoardDetail() {
         });
         if (res.ok) {
             const data = await res.json();
-            console.log("data :::", data);
             setLikeCount(data.likeCount);
             setLiked(data.liked);
         } else {
@@ -94,21 +92,34 @@ export default function BoardDetail() {
         }
     });
 
-    const handleScrap = requireLogin(async () => {
-        const res = await fetch(`${BASE_URL}:8888/api/board/${id}/scrap`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-        });
-        if (res.ok) {
-            const data = await res.json();
-            setScrapCount(data.scrapCount);
-            setScrapped(true);
-        } else {
-            alert("스크랩 처리 실패");
-        }
+const handleScrap = requireLogin(async () => {
+    // 스크랩된 상태라면 먼저 확인창!
+    if (scrapped) {
+        const confirmCancel = window.confirm("스크랩을 취소하겠습니까?");
+        if (!confirmCancel) return; // 사용자가 취소 선택 시 아무것도 안함
+    }
+
+    const res = await fetch(`${BASE_URL}:8888/api/board/${id}/scrap`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
     });
+
+    if (res.ok) {
+        const data = await res.json();
+        setScrapped(data.scrapped);
+
+        // 안내 메시지(선택)
+        if (data.scrapped) {
+            alert("스크랩이 등록되었습니다.");
+        } else {
+            alert("스크랩이 취소되었습니다.");
+        }
+    } else {
+        alert("스크랩 처리 실패");
+    }
+});
 
     if (loading) {
         return <div className="board-detail-card"><div className="board-detail-loading">불러오는 중...</div></div>;
@@ -137,11 +148,18 @@ export default function BoardDetail() {
             </div>
 
             <div className="board-like-scrap-bar">
-                <button className={`like-btn ${liked ? "on" : ""}`} onClick={handleLike}>
-                    ♥ <span>{likeCount}</span>
+                <button 
+                    className={`like-btn ${liked ? "on" : ""}`} 
+                    onClick={handleLike}>
+                        ♥ 
+                    <span>{likeCount}</span>
                 </button>
-                <button className={`scrap-btn ${scrapped ? "on" : ""}`} onClick={handleScrap}>
-                    📌 <span>{scrapCount}</span>
+                <button
+                    className={`scrap-btn ${scrapped ? "on" : ""}`}
+                    onClick={handleScrap}
+                    aria-label={scrapped ? "스크랩 취소" : "스크랩 등록"}
+                >
+                    {scrapped ? "⭐" : "☆"}
                 </button>
             </div>
 

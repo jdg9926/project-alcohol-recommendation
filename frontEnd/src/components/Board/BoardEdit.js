@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import ReactQuill from "react-quill";
+import ReactQuill from "react-quill-new";
 import { BASE_URL } from "../../api/baseUrl";
 
-import "react-quill/dist/quill.snow.css";
+import "react-quill-new/dist/quill.snow.css";
 import "./Board.css";
 
 export default function BoardEdit() {

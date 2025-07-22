@@ -11,8 +11,7 @@ import com.example.alcohol_recommendation.board.model.Scrap;
 
 public interface ScrapRepository extends JpaRepository<Scrap, Long> {
 	Optional<Scrap> findByUserAndBoard(User user, Board board);
+	boolean existsByUserAndBoard(User user, Board board);
 	void deleteByUserAndBoard(User user, Board board);
-	int countByBoard(Board board);
-    int countByBoardId(Long boardId);
     List<Scrap> findAllByUser(User user);
 }

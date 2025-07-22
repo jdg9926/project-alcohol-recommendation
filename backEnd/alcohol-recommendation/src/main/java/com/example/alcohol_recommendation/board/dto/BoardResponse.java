@@ -46,7 +46,7 @@ public class BoardResponse {
         this.liked = liked;
     }
     
-    // ★ Board + Scrap 받는 생성자
+    // Board + Scrap 받는 생성자
     public BoardResponse(Board board, Scrap scrap) {
         this(board);
         if (scrap != null) {
@@ -54,5 +54,12 @@ public class BoardResponse {
             this.scrapDate = scrap.getCreatedAt();
             this.scrapped = true;
         }
+    }
+    
+    // Board + liked + Scrap 받는 생성자
+    public BoardResponse(Board board, boolean liked, boolean scrapped) {
+        this(board);
+        this.liked = liked;
+        this.scrapped = scrapped;
     }
 }

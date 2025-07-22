@@ -76,19 +76,20 @@
 
 .board-table th.board-col-title,
 .board-table td.board-col-title {
-    width: 48%;    /* 제목 폭 넓게 */
+    width: 60%;    /* 제목 폭 넓게 */
     min-width: 180px;
 }
 
 .board-table th.board-col-author,
 .board-table td.board-col-author {
-    width: 15%;    /* 작성자 폭 좁게 */
+    width: 10%;    /* 작성자 폭 좁게 */
     min-width: 70px;
+    text-align: left
 }
 
 .board-table th.board-col-date,
 .board-table td.board-col-date {
-    width: 17%;    /* 날짜 폭 적당히 */
+    width: 15%;    /* 날짜 폭 적당히 */
     min-width: 120px;
 }
 
@@ -368,19 +369,68 @@
     align-items: center;
     margin-bottom: 16px;
 }
-.like-btn, .scrap-btn {
+.like-btn {
     border: none;
     background: none;
-    font-size: 22px;
+    font-size: 1.5rem;
     color: #aaa;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    transition: color 0.16s;
+    gap: 6px;
+    transition: color 0.19s, transform 0.11s;
+    padding: 4px 8px;
+    border-radius: 8px;
+    user-select: none;
 }
-.like-btn.on { color: #e03e3e; }
-.scrap-btn.on { color: #2563eb; }
+
+.like-btn.on {
+    color: #e03e3e;
+    font-weight: bold;
+    transform: scale(1.07);
+}
+
+.like-btn:hover {
+    background: #fff0f0;
+    outline: none;
+}
+
+.like-btn:focus {
+    background: #fff8f8;
+}
+
+.like-btn span {
+    font-size: 1.07rem;
+    margin-left: 2px;
+    color: #555;
+}
+
+.scrap-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.17s, transform 0.1s;
+    color: #bbb;
+    vertical-align: middle;
+    margin-left: 5px;
+    border-radius: 8px;
+    padding: 4px 8px;
+    user-select: none;
+}
+
+.scrap-btn.on {
+    color: #ffe066;
+    transform: scale(1.13);
+}
+
+.scrap-btn:hover {
+    background: #fffbe7;
+}
+
+.scrap-btn:focus {
+    background: #fffbe7;
+}
 
 /* ===== 글쓰기 ===== */
 .board-write-form {

@@ -12,4 +12,5 @@ import com.example.alcohol_recommendation.board.model.Board;
 public interface BoardRepository extends JpaRepository<Board, Long> {
 	Page<Board> findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(String title, String author, Pageable pageable);
 	List<Board> findAllByUser(User user);
+	List<Board> findByUser(User user);
 }
