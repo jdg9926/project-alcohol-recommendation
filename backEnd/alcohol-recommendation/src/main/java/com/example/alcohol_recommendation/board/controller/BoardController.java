@@ -134,6 +134,7 @@ public class BoardController {
 	                }
 	            }
 	        } catch (IOException e) {
+	        	e.printStackTrace();
 	            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장 실패", e);
 	        }
 	    }
