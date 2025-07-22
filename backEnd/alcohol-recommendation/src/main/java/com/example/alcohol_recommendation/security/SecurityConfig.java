@@ -51,7 +51,8 @@ public class SecurityConfig {
                         "/api/board/list",
                         "/api/board/{id:[0-9]+}",
                         "/api/board/{id:[0-9]+}/comments",
-                        "/api/board/download/**"
+                        "/api/board/download/**",
+                        "/api/board/write"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
