@@ -65,7 +65,7 @@ public class CommentController {
                 .build();
 
         Comment saved = commentRepository.save(comment);
-        return new CommentResponse(saved);
+        return new CommentResponse(saved); 
     }
     
     // (선택) 댓글 삭제
