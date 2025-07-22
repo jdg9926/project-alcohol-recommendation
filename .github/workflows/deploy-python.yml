@@ -32,16 +32,24 @@ jobs:
           source: "./frontEnd"
           target: "/home/ubuntu/frontEnd"
 
-      # (3) EC2에서 백엔드, 프론트 모두 자동 빌드/재시작
-      - name: Install & Run both servers on EC2
+      # (3) EC2에서 백엔드, 프론트 모두 자동 빌드/재시작 및 IP 자동 치환
+      - name: Install, Replace IP, and Run both servers on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
+            ###### [공통 환경변수: 최신 퍼블릭 IP] ######
+            export NEW_PUBLIC_IP="43.200.182.46"
+
             ###### [1] 백엔드(FastAPI) ######
             cd /home/ubuntu/python
+
+            # main.py 등에서 이전 IP를 새 IP로 자동 치환 (포트 여러 군데 필요하면 g 옵션 추가)
+            sed -i "s|3\.36\.66\.231|${NEW_PUBLIC_IP}|g" main.py
+
+            # 가상환경 생성 및 패키지 설치
             if [ ! -d "venv" ]; then python3 -m venv venv; fi
             source venv/bin/activate
             pip install --upgrade pip
@@ -50,23 +58,24 @@ jobs:
             # 환경변수 예시 (필요시)
             export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/python/qna-ai-proejct-5fd3a30365dd.json
 
-            # 기존 FastAPI 서버 종료
+            # 기존 FastAPI 서버 종료 및 재실행
             screen -S fastapi-server -X quit || true
-            # FastAPI 재실행 (main.py 기준)
             screen -dmS fastapi-server venv/bin/python3 -m uvicorn main:app --host=0.0.0.0 --port=8000
 
             ###### [2] 프론트엔드(React) ######
             cd /home/ubuntu/frontEnd
 
-            # 환경변수(BASE_URL) 동적으로 적용 - 배포 직전 세팅!
-            export REACT_APP_BASE_URL="http://43.200.182.46"
-            echo "REACT_APP_BASE_URL=http://43.200.182.46" > .env
+            # 환경변수(BASE_URL) 자동 반영
+            export REACT_APP_BASE_URL="http://${NEW_PUBLIC_IP}"
+            echo "REACT_APP_BASE_URL=http://${NEW_PUBLIC_IP}" > .env
 
-            # 빌드 및 serve로 서비스 (serve가 없다면 npm install -g serve 필요)
+            # 필요하다면 JS/TS/환경파일 등에서도 sed로 직접 IP 치환 가능
+            # 예) sed -i "s|3\.36\.66\.231|${NEW_PUBLIC_IP}|g" src/api.js
+
+            # 빌드 및 serve로 서비스
             npm install
             npm run build
 
-            # 기존 프론트 서버 종료
+            # 기존 프론트 서버 종료 및 재시작
             screen -S react-serve -X quit || true
-            # 빌드 결과를 serve로 실행 (필요시 pm2로 돌려도 OK)
             screen -dmS react-serve npx serve -s build -l 3000
