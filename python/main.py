@@ -2,8 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from wine_genai import recommend_wine_by_conditions
-
-# 👇 게시판 등록용 requests 추가
 import requests
 
 app = FastAPI()
@@ -33,13 +31,13 @@ class WineRequest(BaseModel):
 
 def post_to_board(title, content, author="AI"):
     API_URL = "http://43.200.182.46:8888/api/board/write"
-    form_data = {
-        "title": title,
-        "content": content,
-        "author": author
+    files = {
+        "title": (None, title),
+        "content": (None, content),
+        "author": (None, author)
     }
     try:
-        response = requests.post(API_URL, data=form_data, timeout=5)
+        response = requests.post(API_URL, files=files, timeout=5)
         if response.ok:
             print("게시판 등록 성공!")
         else:
@@ -48,24 +46,19 @@ def post_to_board(title, content, author="AI"):
         print("게시판 등록 예외:", e)
 
 def extract_wine_name(recommendation_text):
-    # "와인 이름:" 줄만 탐색, 거기에만 이름이 있으면 그걸 쓴다
     for line in recommendation_text.splitlines():
         if "와인 이름:" in line:
-            # "와인 이름: 빌라 마리아 소비뇽 블랑 말보로 (영문명)" 같은 형태도 대응
             wine_name = line.split("와인 이름:")[1].strip()
-            # 괄호 이전까지를 쓰고 싶으면 아래 주석 해제
-            # return wine_name.split("(")[0].strip() if "(" in wine_name else wine_name
             return wine_name
-    return "추천 와인"  # 없으면 기본값
+    return "추천 와인"
 
 @app.post("/recommend")
 async def recommend(data: WineRequest):
     conditions = data.model_dump()
-    recommendation = recommend_wine_by_conditions(conditions)  # 이미 예쁘게 정렬됨!
-
+    recommendation = recommend_wine_by_conditions(conditions)
     wine_name = extract_wine_name(recommendation)
     title = f"AI 와인 추천: {wine_name}"
-    content = recommendation  # "가공 없이 그대로" 저장!
+    content = recommendation
 
     post_to_board(title, content)
     return {"recommendation": recommendation}
