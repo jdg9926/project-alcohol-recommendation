@@ -30,6 +30,7 @@ class WineRequest(BaseModel):
     price: str = "상관없음"
 
 def post_to_board(title, content, author="AI"):
+    print("게시판 등록 시작")   # <-- 이거 추가!
     API_URL = "http://43.200.182.46:8888/api/board/write"
     files = {
         "title": (None, title),
