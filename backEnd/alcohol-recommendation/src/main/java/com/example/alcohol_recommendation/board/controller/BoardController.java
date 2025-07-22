@@ -113,7 +113,7 @@ public class BoardController {
 	    User user = userRepository.findById(userSeq)
 	        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보 오류"));
 	    board.setUser(user);
-	    board.setAuthor(user.getNickname());
+	    board.setAuthor(user.getNickname()); 
 
 	    // 파일 저장
 	    if (files != null && !files.isEmpty()) {
