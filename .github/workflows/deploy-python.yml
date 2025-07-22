@@ -1,4 +1,4 @@
-name: Deploy FastAPI to EC2
+name: Deploy FastAPI and React to EC2
 
 on:
   push:
@@ -12,35 +12,61 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # python 폴더 전체 EC2로 전송
+      # (1) FastAPI 파이썬 코드 전송
       - name: Copy Python source code to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "./python"                # 깃허브 레포 기준 폴더명!
-          target: "/home/ubuntu/python"     # EC2에서 사용할 경로
+          source: "./python"
+          target: "/home/ubuntu/python"
 
-      - name: Install dependencies and Run FastAPI on EC2
+      # (2) React 프론트엔드 코드 전송
+      - name: Copy React source code to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "./frontEnd"
+          target: "/home/ubuntu/frontEnd"
+
+      # (3) EC2에서 백엔드, 프론트 모두 자동 빌드/재시작
+      - name: Install & Run both servers on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
+            ###### [1] 백엔드(FastAPI) ######
             cd /home/ubuntu/python
-            # 가상환경 생성 (없으면)
             if [ ! -d "venv" ]; then python3 -m venv venv; fi
             source venv/bin/activate
             pip install --upgrade pip
             pip install -r requirements.txt
 
-            # Google API Key 사용한다면 환경변수 등록 (필요시)
+            # 환경변수 예시 (필요시)
             export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/python/qna-ai-proejct-5fd3a30365dd.json
 
             # 기존 FastAPI 서버 종료
             screen -S fastapi-server -X quit || true
-
-            # FastAPI 서버 실행 (main.py 기준)
+            # FastAPI 재실행 (main.py 기준)
             screen -dmS fastapi-server venv/bin/python3 -m uvicorn main:app --host=0.0.0.0 --port=8000
+
+            ###### [2] 프론트엔드(React) ######
+            cd /home/ubuntu/frontEnd
+
+            # 환경변수(BASE_URL) 동적으로 적용 - 배포 직전 세팅!
+            export REACT_APP_BASE_URL="http://43.200.182.46"
+            echo "REACT_APP_BASE_URL=http://43.200.182.46" > .env
+
+            # 빌드 및 serve로 서비스 (serve가 없다면 npm install -g serve 필요)
+            npm install
+            npm run build
+
+            # 기존 프론트 서버 종료
+            screen -S react-serve -X quit || true
+            # 빌드 결과를 serve로 실행 (필요시 pm2로 돌려도 OK)
+            screen -dmS react-serve npx serve -s build -l 3000
