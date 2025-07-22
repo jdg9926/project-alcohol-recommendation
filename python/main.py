@@ -38,6 +38,7 @@ def post_to_board(title, content, author="AI"):
     }
     try:
         response = requests.post(API_URL, files=files, timeout=5)
+        print("Content-Type:", response.request.headers.get('Content-Type'))
         if response.ok:
             print("게시판 등록 성공!")
         else:
