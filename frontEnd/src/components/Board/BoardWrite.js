@@ -20,7 +20,7 @@ export default function BoardWrite() {
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
 
-    const { loginToken, user } = useContext(AuthContext);
+    const { loginToken } = useContext(AuthContext);
 
     // 파일 제한 상수
     const MAX_FILES = 5;
