@@ -49,6 +49,7 @@ public class CommentController {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글이 존재하지 않습니다."));
 
+        System.out.println("addComment principal :::" + principal);
         if (request.getContent() == null || request.getContent().trim().isEmpty())
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 내용을 입력하세요.");
 

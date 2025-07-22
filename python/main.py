@@ -33,13 +33,13 @@ class WineRequest(BaseModel):
 
 def post_to_board(title, content, author="AI"):
     API_URL = "http://43.200.182.46:8888/api/board/write"
-    post_data = {
+    form_data = {
         "title": title,
         "content": content,
         "author": author
     }
     try:
-        response = requests.post(API_URL, json=post_data, timeout=5)
+        response = requests.post(API_URL, files=form_data, timeout=5)
         if response.ok:
             print("게시판 등록 성공!")
         else:

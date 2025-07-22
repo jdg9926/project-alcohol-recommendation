@@ -1,7 +1,10 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { AuthContext } from "../../AuthContext";
 import { BASE_URL } from "../../api/baseUrl";
 import "./Board.css";
+
+
 
 export default function BoardList() {
     const [posts, setPosts] = useState([]);
@@ -22,6 +25,9 @@ export default function BoardList() {
 
     // 넘버링
     const [totalElements, setTotalElements] = useState(0);
+
+    const { user } = useContext(AuthContext); // 유저 정보
+    const isLoggedIn = !!user; // user state에 따라
 
     useEffect(() => {
         setLoading(true);
@@ -45,7 +51,16 @@ export default function BoardList() {
         <div className="board-container">
             <div className="board-header">
                 <h2 className="board-title">게시판</h2>
-                <Link to="write" className="board-write-btn">글쓰기</Link>
+                {isLoggedIn ? (
+                    <Link to="write" className="board-write-btn">글쓰기</Link>
+                ) : (
+                    <button
+                        className="board-write-btn"
+                        onClick={() => alert("로그인 후 글쓰기가 가능합니다!")}
+                    >
+                        글쓰기
+                    </button>
+                )}
             </div>
             <div className="board-sort-bar">
                 <label htmlFor="board-sort-select" className="board-sort-label">정렬:</label>

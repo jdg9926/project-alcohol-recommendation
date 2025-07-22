@@ -9,7 +9,7 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const [form, setForm] = useState({ userId: '', password: '' });
     const [error, setError] = useState(null);
-    const { setUser } = useContext(AuthContext);
+    const { setUser, setLoginToken } = useContext(AuthContext);
 
     const handleChange = e => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -18,17 +18,17 @@ export default function LoginPage() {
     const handleSubmit = async e => {
         e.preventDefault();
         try {
-            const user = await login(form);
-            setUser(user);
+            const body = await login(form);
+            setLoginToken(body.token);
+            setUser(body.user);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || '로그인 실패');
+            setError(err.message);
         }
     };
     return (
         <>
             <div className="auth-container">
-                {error && <p className="error">{error}</p>}
                 <form onSubmit={handleSubmit} className="auth-form">
                     <label>
                         아이디
@@ -50,6 +50,7 @@ export default function LoginPage() {
                             required
                         />
                     </label>
+                    {error && <p className="error">{error}</p>}
                     <button type="submit">로그인</button>
                     <div style={{fontSize: "12px", color: "#0077b6", textAlign: "center" }}>
                         <Link to="/find-id" style={{ color: "#0077b6", textDecoration: "underline", fontWeight: 500 }}>

@@ -34,7 +34,6 @@ const MainHeader = () => {
             <div className="header-auth-buttons">
                 {user ? (
                     <>
-                        {/* (선택) 사용자 닉네임 표시 */}
                         <span className="user-nickname">{user.nickname}님</span>
                         <NavLink to="/mypage" className="header-btn mypage-button">
                             마이페이지

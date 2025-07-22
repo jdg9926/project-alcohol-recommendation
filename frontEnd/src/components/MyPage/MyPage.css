@@ -98,3 +98,73 @@
     border-color: #e03e3e;
     outline: 2px solid #ffc9c9;
 }
+
+.profile-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 350px;
+    margin: 0 auto;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.profile-edit-input {
+    padding: 8px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 7px;
+    font-size: 1.07rem;
+    background: #fffdfa;
+    transition: border 0.18s;
+}
+.profile-edit-input:focus {
+    border: 1.5px solid #e03e3e;
+    outline: 2px solid #ffd5d5;
+}
+
+.profile-edit-btn {
+    background: #e03e3e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.07rem;
+    font-weight: 700;
+    padding: 10px 0;
+    margin-top: 6px;
+    box-shadow: 0 2px 8px rgba(224, 62, 62, 0.05);
+    cursor: pointer;
+    transition: background 0.16s, box-shadow 0.16s;
+}
+.profile-edit-btn:hover {
+    background: #c73131;
+    box-shadow: 0 4px 14px rgba(224, 62, 62, 0.14);
+}
+
+.profile-edit-message {
+    margin-top: 8px;
+    font-size: 1rem;
+    color: #e03e3e;
+    background: #fff2f2;
+    border-radius: 5px;
+    padding: 7px 10px;
+    border: 1px solid #ffe5e5;
+}
+
+/* 반응형 */
+@media (max-width: 450px) {
+    .profile-edit-form {
+        max-width: 100%;
+    }
+    .profile-edit-input {
+        font-size: 0.96rem;
+        padding: 7px 8px;
+    }
+    .profile-edit-btn {
+        font-size: 0.97rem;
+        padding: 8px 0;
+    }
+}

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.alcohol_recommendation.auth.model.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -20,14 +21,16 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "board")
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+@Getter
+@Setter
 @Builder
 public class Board {
     @Id
@@ -65,6 +68,7 @@ public class Board {
     // BoardLike(좋아요) - 삭제 시 cascade, orphanRemoval
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @JsonIgnore
     private List<BoardLike> likes = new ArrayList<>();
 
     // Scrap(스크랩) - 삭제 시 cascade, orphanRemoval
@@ -73,7 +77,7 @@ public class Board {
     private List<Scrap> scraps = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     // 첨부파일 추가 메서드

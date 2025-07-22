@@ -93,7 +93,7 @@ public class BoardController {
 	public Board createBoard(Principal principal,
 							 @RequestPart("title") String title,
 							 @RequestPart("content") String content,
-//							 @RequestPart("author") String author,
+							 @RequestPart("author") String author,
 							 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
     	
 	    if (title == null || title.trim().isEmpty()) {
@@ -102,21 +102,23 @@ public class BoardController {
 	    if (content == null || content.trim().isEmpty()) {
 	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "내용은 필수입니다.");
 	    }
+	    
+	    System.out.println("principal :::" + principal);
 
 	    Board board = new Board();
 	    board.setTitle(title);
 	    board.setContent(content);
-//	    board.setAuthor(author);
 	    board.setCreatedAt(LocalDateTime.now());
 	    
-	    System.out.println("write principal :::" + principal + " ::: " + principal.getName());
-	    Long userSeq = Long.parseLong(principal.getName());
-	    User user = userRepository.findById(userSeq).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보 오류"));
-	    
-	    System.out.println("user :::" + userSeq  + " :::" + user);
-	    
-	    board.setUser(user);
-	    board.setAuthor(user.getNickname()); 
+	    if (principal != null) {
+	        Long userSeq = Long.parseLong(principal.getName());
+	        User user = userRepository.findById(userSeq)
+	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보 오류"));
+	        board.setUser(user);
+	        board.setAuthor(user.getNickname());
+	    } else {
+	        board.setAuthor(author);
+	    }
 
 	    // 파일 저장
 	    if (files != null && !files.isEmpty()) {

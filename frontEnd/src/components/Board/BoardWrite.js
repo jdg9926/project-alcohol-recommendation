@@ -2,7 +2,6 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import { BASE_URL } from "../../api/baseUrl";
-import { logErrorToBoard } from "../../utils/errorLogger";
 
 import { useContext } from "react";
 import { AuthContext } from "../../AuthContext";
@@ -20,7 +19,7 @@ export default function BoardWrite() {
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
 
-    const { loginToken } = useContext(AuthContext);
+    const { loginToken, user } = useContext(AuthContext);
 
     // 파일 제한 상수
     const MAX_FILES = 5;
@@ -87,30 +86,24 @@ export default function BoardWrite() {
     // 폼 제출
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!title || !title.trim()) return alert("제목은 필수입니다.");
+        if (!content || !content.trim()) return alert("내용은 필수입니다.");
+
         setLoading(true);
         setError(null);
-
-        // 에러 정보 변수 초기화
-        let errorTitle = "";
-        let errorDetail = "";
-        let statusCode = "";
-        let statusText = "";
-        let errorMessage = "";
-
-        // API 경로 (로깅 및 요청에 사용)
-        const apiPath = `${BASE_URL}:8888/api/board/write`;
 
         try {
             // FormData로 게시글 + 파일 첨부
             const formData = new FormData();
             formData.append("title", title);
             formData.append("content", content);
-            // formData.append("author", user?.nickname);
+            formData.append("author", user?.nickname);
             files.forEach((file) => {
                 formData.append("files", file);
             });
 
-            const response = await fetch(apiPath, {
+            const response = await fetch(`${BASE_URL}:8888/api/board/write`, {
                 method: "POST",
                 headers: {
                     "Authorization": loginToken ? `Bearer ${loginToken}` : undefined
@@ -119,36 +112,18 @@ export default function BoardWrite() {
             });
 
             if (!response.ok) {
-                statusCode = response.status;
-                statusText = response.statusText;
                 try {
-                    const data = await response.json();
-                    errorMessage = data.detail || data.message || JSON.stringify(data);
-                    errorTitle = `${statusCode} ${data.title || statusText}`;
-                    errorDetail = `${statusCode} ${data.title || statusText} "${errorMessage}"`;
+                    
                 } catch (err) {
-                    const text = await response.text();
-                    errorDetail = `${statusCode} ${statusText} "${text}"`;
-                    errorTitle = `${statusCode} ${statusText}`;
+                    setError(err.message);
                 }
                 throw new Error("글 등록에 실패하였습니다.");
+            } else {
+                alert("글이 등록되었습니다!");
+                navigate("/board");
             }
-
-            alert("글이 등록되었습니다!");
-            navigate("/board");
         } catch (err) {
             setError(err.message);
-
-            // 에러 발생 시 SYSTEM 글로 에러 남김
-            await logErrorToBoard({
-                BASE_URL,
-                title: errorTitle,
-                errorDetail,
-                originTitle: title,
-                contentLength: content?.length,
-                apiPath,
-                extraData: { filesCount: files?.length }
-            });
         } finally {
             setLoading(false);
         }

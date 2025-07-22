@@ -1,34 +1,59 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { BASE_URL } from "../../api/baseUrl";
+import { AuthContext } from "../../AuthContext";
 
-export default function ProfileEdit({ user }) {
+export default function ProfileEdit() {
+    const { user, loginToken, setUser } = useContext(AuthContext);
     const [nickname, setNickname] = useState(user.nickname);
     const [message, setMessage] = useState("");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // 서버에 PATCH/PUT 요청 (headers에 Authorization 포함!)
         try {
-            // 예시: PATCH /api/users/me
-            const res = await fetch("/api/users/me", {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
-                },
-                body: JSON.stringify({ nickname }),
+            const formData = new FormData();
+            formData.append("nickname", nickname);
+
+            const response = await fetch(`${BASE_URL}:8888/myPage/myEdit`, {
+                method: "PUT",
+                headers: { Authorization: `Bearer ${loginToken}` },
+                body: formData,
             });
-            if (res.ok) setMessage("수정되었습니다!");
-            else setMessage("수정 실패");
+
+            if (!response.ok) {
+                setMessage("수정 오류");
+            } else {
+                setMessage("닉네임이 수정되었습니다.");
+                const data = await response.json();
+                if (data && data.nickname) setUser(data);
+
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+
         } catch {
             setMessage("수정 오류");
         }
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <div>닉네임: <input value={nickname} onChange={e => setNickname(e.target.value)} /></div>
-            <button type="submit">수정</button>
-            {message && <div>{message}</div>}
-        </form>
+        <div className="mypage-wrap">
+            <div className="mypage-profile">
+                <h2>프로필 수정</h2>
+                <form className="profile-edit-form" onSubmit={handleSubmit}>
+                    <div className="form-row">
+                        <label htmlFor="nickname">닉네임</label>
+                        <input
+                            id="nickname"
+                            value={nickname}
+                            onChange={e => setNickname(e.target.value)}
+                            className="profile-edit-input"
+                        />
+                    </div>
+                    <button type="submit" className="profile-edit-btn">수정</button>
+                    {message && <div className="profile-edit-message">{message}</div>}
+                </form>
+            </div>
+        </div>
     );
 }
