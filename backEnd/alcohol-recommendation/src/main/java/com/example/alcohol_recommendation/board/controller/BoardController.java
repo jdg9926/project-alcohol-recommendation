@@ -109,9 +109,12 @@ public class BoardController {
 //	    board.setAuthor(author);
 	    board.setCreatedAt(LocalDateTime.now());
 	    
+	    System.out.println("write principal :::" + principal + " ::: " + principal.getName());
 	    Long userSeq = Long.parseLong(principal.getName());
-	    User user = userRepository.findById(userSeq)
-	        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보 오류"));
+	    User user = userRepository.findById(userSeq).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보 오류"));
+	    
+	    System.out.println("user :::" + userSeq  + " :::" + user);
+	    
 	    board.setUser(user);
 	    board.setAuthor(user.getNickname()); 
 
