@@ -108,8 +108,6 @@ public class BoardController {
 	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "내용은 필수입니다.");
 	    }
 	    
-	    System.out.println("principal :::" + principal);
-
 	    Board board = new Board();
 	    board.setTitle(title);
 	    board.setContent(content);
