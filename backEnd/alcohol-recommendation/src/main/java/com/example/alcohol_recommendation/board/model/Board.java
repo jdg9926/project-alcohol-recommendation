@@ -41,7 +41,7 @@ public class Board {
     private String content;
 
     @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now(); 
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     private String author;
 
