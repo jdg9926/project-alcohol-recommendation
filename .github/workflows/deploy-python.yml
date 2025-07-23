@@ -20,7 +20,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           source: "./python"
-          target: "/home/ubuntu/python"
+          target: "/home/ubuntu"
 
       # 2. EC2에서 FastAPI 서버 재시작 (클린 가상환경 포함)
       - name: Run FastAPI server on EC2
