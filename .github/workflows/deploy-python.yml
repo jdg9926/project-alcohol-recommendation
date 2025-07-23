@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 1. FastAPI 파이썬 코드 전송 (최신 main.py 등 포함)
+      # 1. 최신 Python 코드 EC2에 복사 (python 폴더 전체)
       - name: Copy Python source code to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -22,7 +22,7 @@ jobs:
           source: "./python"
           target: "/home/ubuntu/python"
 
-      # 2. EC2에서 파이썬 서버 재실행 및 프로세스 보장
+      # 2. EC2에서 FastAPI 서버 재시작 (클린 가상환경 포함)
       - name: Run FastAPI server on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -34,23 +34,37 @@ jobs:
 
             cd /home/ubuntu/python
 
-            # 가상환경 생성/업데이트
-            if [ ! -d "venv" ]; then python3 -m venv venv; fi
+            # 1. 기존 가상환경 삭제 후 새로 생성 (항상 클린 설치)
+            rm -rf venv
+            python3 -m venv venv
             source venv/bin/activate
+
+            # 2. pip 최신화 및 패키지 설치
             pip install --upgrade pip
             pip install -r requirements.txt
 
-            # 환경변수 (필요시)
+            # 3. 환경변수 (키파일 경로 꼭 최신값으로!)
             export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/python/qna-ai-proejct-5fd3a30365dd.json
 
-            # FastAPI 기존 세션 종료 (혹시라도 여러 번 떠있는 경우 모두 정리)
+            # 4. FastAPI 서버 모두 종료 (중복 실행 방지)
             screen -S fastapi-server -X quit || true
             pkill -f "uvicorn.*main:app" || true
 
-            # 최신 main.py로 FastAPI 서버 새로 실행
+            # 5. FastAPI 서버 새로 실행 (screen 백그라운드)
             screen -dmS fastapi-server venv/bin/python3 -m uvicorn main:app --host=0.0.0.0 --port=8000
 
-            # 실행확인 (디버깅용, 원하면 삭제 가능)
+            # 6. 실행 확인 (디버깅)
             sleep 2
             pgrep -af uvicorn || echo "uvicorn 프로세스가 실행되지 않음"
             screen -ls
+
+      # (선택) 에러 발생 시 서버 로그 자동 출력
+      - name: Show FastAPI screen log if failed
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cat /home/ubuntu/python/screenlog.0 || echo "No screenlog found"
