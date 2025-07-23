@@ -35,7 +35,8 @@ def post_to_board(title, content, author="AI"):
     files = {
         "title": (None, title),
         "content": (None, content),
-        "author": (None, author)
+        "author": (None, author),
+        "boardType": (None, "AI")
     }
     try:
         response = requests.post(API_URL, files=files, timeout=5)

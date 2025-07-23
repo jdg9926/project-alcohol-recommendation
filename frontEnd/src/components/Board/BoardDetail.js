@@ -1,5 +1,4 @@
-// src/components/board/BoardDetail.js
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../../AuthContext";
 
@@ -26,6 +25,9 @@ export default function BoardDetail() {
     const [liked, setLiked] = useState(false);
     const [scrapped, setScrapped] = useState(false);
 
+    const location = useLocation();
+    const boardType = new URLSearchParams(location.search).get('boardType') || "ALL";
+
     // 비로그인 보호용 핸들러
     const requireLogin = (action) => () => {
         if (!user) {
@@ -45,7 +47,6 @@ export default function BoardDetail() {
                 });
                 if (!res.ok) throw new Error("게시글을 불러올 수 없습니다.");
                 const data = await res.json();
-                console.log("data :::", data);
                 setPost(data);
                 setLikeCount(data.likeCount ?? 0);
                 setLiked(data.liked ?? false);
@@ -70,7 +71,7 @@ export default function BoardDetail() {
             });
             if (!res.ok) throw new Error("삭제 실패");
             alert("삭제되었습니다.");
-            navigate("/board");
+            navigate(`/board?boardType=${boardType}`);  // boardType 반영!
         } catch (err) {
             alert(err.message || "삭제에 실패했습니다.");
         }
@@ -125,11 +126,11 @@ export default function BoardDetail() {
     }
     if (error || !post) {
         return (
-            <div className="board-detail-card">
+            <div className="board-detail-card"> 
                 <h2>게시글 상세보기</h2>
                 <div className="board-detail-error">{error || "해당 게시글을 찾을 수 없습니다."}</div>
-                <button type="button" onClick={() => navigate(-1)} className="board-write-btn board-back-btn">
-                    <FiArrowLeft className="icon" /> 목록으로
+                <button onClick={() => navigate(`/?boardType=${boardType}`)} className="board-write-btn board-back-btn">
+                    목록으로
                 </button>
             </div>
         );
@@ -190,7 +191,7 @@ export default function BoardDetail() {
                 {/* 로그인한 사람만 수정/삭제 버튼 보이기 */}
                 {isAuthor && (
                     <>
-                        <button className="board-write-btn board-edit-btn" onClick={() => navigate(`/board/${id}/edit`)}>
+                        <button className="board-write-btn board-edit-btn" onClick={() => navigate(`/board/${id}/edit?boardType=${boardType}`)}>
                             <FiEdit2 className="icon" /> 수정
                         </button>
                         <button className="board-write-btn board-delete-btn" onClick={handleDelete}>
@@ -198,7 +199,7 @@ export default function BoardDetail() {
                         </button>
                     </>
                 )}
-                <button className="board-write-btn board-back-btn" onClick={() => navigate("/board")}>
+                <button onClick={() => navigate(`/?boardType=${boardType}`)} className="board-write-btn board-back-btn">
                     <FiArrowLeft className="icon" /> 목록으로
                 </button>
             </div>

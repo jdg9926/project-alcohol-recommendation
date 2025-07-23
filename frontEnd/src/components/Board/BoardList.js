@@ -1,10 +1,15 @@
-import { Link } from "react-router-dom";
-import { useEffect, useState, useContext } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState, useContext, useCallback } from "react";
 import { AuthContext } from "../../AuthContext";
 import { BASE_URL } from "../../api/baseUrl";
 import "./Board.css";
 
-
+const tabs = [
+    { label: '전체게시판', type: 'ALL' },
+    { label: '일반게시판', type: 'GENERAL' },
+    { label: '에러게시판', type: 'ERROR' },
+    { label: 'AI 추천게시판', type: 'AI' }
+];
 
 export default function BoardList() {
     const [posts, setPosts] = useState([]);
@@ -29,10 +34,36 @@ export default function BoardList() {
     const { user } = useContext(AuthContext); // 유저 정보
     const isLoggedIn = !!user; // user state에 따라
 
+    const navigate = useNavigate();
+    const location = useLocation();
+    const getBoardTypeFromUrl = useCallback(() => {
+        return new URLSearchParams(location.search).get('boardType') || 'ALL';
+    }, [location.search]);
+    
+    // boardType 상태 추가
+    const [boardType, setBoardType] = useState(getBoardTypeFromUrl());
+    
+    // boardType 상태와 URL 동기화
+    useEffect(() => {
+        const urlBoardType = getBoardTypeFromUrl();
+        if (boardType !== urlBoardType) {
+            setBoardType(urlBoardType);
+        }
+    }, [boardType, getBoardTypeFromUrl]);
+
+    // 탭 클릭시 URL도 같이 변경!
+    const handleTabClick = (type) => {
+        // setBoardType(type);  // 상태만 바꾸는 대신
+        navigate(`?boardType=${type}`); // URL만 바꾸면 useEffect로 상태가 동기화됨
+        setPage(0);
+    };
+
     useEffect(() => {
         setLoading(true);
         let url = `${BASE_URL}:8888/api/board/list?page=${page}&size=${size}&sort=createdAt,${sortOrder}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
+        if (boardType && boardType !== 'ALL') url += `&boardType=${boardType}`;
+        else url += `&boardType=ALL`;
         fetch(url)
             .then(res => {
                 if (!res.ok) throw new Error("게시글을 불러올 수 없습니다.");
@@ -45,22 +76,46 @@ export default function BoardList() {
             })
             .catch(err => setError(err.message))
             .finally(() => setLoading(false));
-    }, [page, size, search, sortOrder]);
+    }, [page, size, search, sortOrder, boardType]); // boardType 의존성 추가
 
     return (
         <div className="board-container">
+            <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+                {tabs.map(tab => (
+                    <button
+                        key={tab.type}
+                        className={`board-tab-btn${boardType === tab.type ? ' active' : ''}`}
+                        onClick={() => {
+                            handleTabClick(tab.type)
+                            setPage(0); // 탭 전환 시 첫 페이지로 이동
+                        }}
+                        style={{
+                            padding: "8px 18px",
+                            borderRadius: 8,
+                            border: boardType === tab.type ? "2px solid #e03e3e" : "1px solid #eee",
+                            background: boardType === tab.type ? "#fff5f5" : "#fff",
+                            color: boardType === tab.type ? "#e03e3e" : "#444",
+                            fontWeight: boardType === tab.type ? 700 : 400,
+                            fontSize: 17,
+                            cursor: "pointer"
+                        }}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
             <div className="board-header">
                 <h2 className="board-title">게시판</h2>
-                {isLoggedIn ? (
-                    <Link to="write" className="board-write-btn">글쓰기</Link>
-                ) : (
-                    <button
-                        className="board-write-btn"
-                        onClick={() => alert("로그인 후 글쓰기가 가능합니다!")}
-                    >
-                        글쓰기
-                    </button>
-                )}
+                {boardType === "GENERAL" ? (
+                    isLoggedIn ? (
+                        <Link to={`write?boardType=GENERAL`} className="board-write-btn">글쓰기</Link>
+                    ) : (
+                        <button
+                            className="board-write-btn"
+                            onClick={() => alert("로그인 후 글쓰기가 가능합니다!")}
+                        >글쓰기</button>
+                    )
+                ) : null}
             </div>
             <div className="board-sort-bar">
                 <label htmlFor="board-sort-select" className="board-sort-label">정렬:</label>
@@ -115,7 +170,10 @@ export default function BoardList() {
                                     {totalElements - (page * size + idx)}
                                 </td>
                                 <td className="board-title-cell board-col-title">
-                                    <Link to={`${post.id}`} className="board-link">
+                                    <Link 
+                                        to={`${post.id}?boardType=${boardType}`} 
+                                        className="board-link"
+                                        >
                                         {post.title}
                                     </Link>
                                 </td>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import ReactQuill from "react-quill-new";
 import { BASE_URL } from "../../api/baseUrl";
 
@@ -17,6 +17,9 @@ export default function BoardEdit() {
     const [newFiles, setNewFiles] = useState([]); // File[]
     const [isDragActive, setIsDragActive] = useState(false);
     const fileInputRef = useRef(null);
+
+    const location = useLocation();
+    const boardType = new URLSearchParams(location.search).get('boardType') || "ALL";
 
     // 파일 제한 상수
     const MAX_FILES = 5;
@@ -143,7 +146,7 @@ export default function BoardEdit() {
             });
             if (!res.ok) throw new Error("수정 실패");
             alert("수정되었습니다!");
-            navigate(`/board/${id}`);
+            navigate(`/board/${id}?boardType=${boardType}`);
         } catch (err) {
             alert(err.message || "수정에 실패했습니다.");
         }
@@ -165,6 +168,17 @@ export default function BoardEdit() {
     return (
         <div className="board-write-form">
             <h2>게시글 수정</h2>
+            <div style={{
+                marginBottom: 20,
+                fontSize: 18,
+                color: "#e03e3e"
+            }}>
+            {boardType === "ALL" ? "전체게시판"
+            : boardType === "GENERAL" ? "일반게시판"
+            : boardType === "ERROR" ? "에러게시판"
+            : boardType === "AI" ? "AI 추천게시판"
+            : boardType}
+            </div>
             <form onSubmit={handleSubmit}>
                 <input
                     className="board-input"
@@ -258,7 +272,7 @@ export default function BoardEdit() {
                 )}
                 <div className="board-write-btns">
                     <button type="submit" className="board-write-btn">저장</button>
-                    <button type="button" className="board-write-btn board-write-cancel" onClick={() => navigate(-1)}>취소</button>
+                    <button type="button" className="board-write-btn board-write-cancel" onClick={() => navigate(`/board/${id}?boardType=${boardType}`)}>취소</button>
                 </div>
             </form>
         </div>

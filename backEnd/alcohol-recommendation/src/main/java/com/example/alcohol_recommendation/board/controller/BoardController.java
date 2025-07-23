@@ -40,6 +40,7 @@ import com.example.alcohol_recommendation.board.dto.BoardResponse;
 import com.example.alcohol_recommendation.board.dto.PagedResponse;
 import com.example.alcohol_recommendation.board.model.Board;
 import com.example.alcohol_recommendation.board.model.BoardLike;
+import com.example.alcohol_recommendation.board.model.BoardType;
 import com.example.alcohol_recommendation.board.model.Scrap;
 import com.example.alcohol_recommendation.board.repository.BoardLikeRepository;
 import com.example.alcohol_recommendation.board.repository.BoardRepository;
@@ -57,16 +58,38 @@ public class BoardController {
     private final ScrapRepository scrapRepository;
     
     @GetMapping("/list")
-    public PagedResponse<BoardResponse> getBoardList(@RequestParam(name = "search", required = false) String search, Pageable pageable) {
-        Page<BoardResponse> page;
+    public PagedResponse<BoardResponse> getBoardList(
+        @RequestParam(name = "search", required = false) String search,
+        @RequestParam(name = "boardType", required = false, defaultValue = "ALL") String boardType,
+        Pageable pageable) {
+
+        Page<Board> page;
+
         if (search != null && !search.trim().isEmpty()) {
-            page = boardRepository
-                    .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(search, search, pageable)
-                    .map(BoardResponse::new);
+            if (boardType == null || boardType.equalsIgnoreCase("ALL")) {
+                // 전체 + 검색
+                page = boardRepository
+                        .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(search, search, pageable);
+            } else {
+                // boardType + 검색
+                BoardType type = BoardType.valueOf(boardType.toUpperCase());
+                page = boardRepository
+                    .findByBoardTypeAndTitleContainingIgnoreCaseOrBoardTypeAndAuthorContainingIgnoreCase(
+                        type, search, type, search, pageable
+                    );
+            }
         } else {
-            page = boardRepository.findAll(pageable).map(BoardResponse::new);
+            if (boardType == null || boardType.equalsIgnoreCase("ALL")) {
+                // 전체 목록
+                page = boardRepository.findAll(pageable);
+            } else {
+                // boardType만 적용
+                BoardType type = BoardType.valueOf(boardType.toUpperCase());
+                page = boardRepository.findByBoardType(type, pageable);
+            }
         }
-        return new PagedResponse<>(page);
+
+        return new PagedResponse<>(page.map(BoardResponse::new));
     }
     
     // 단건 조회
@@ -95,17 +118,22 @@ public class BoardController {
 
     // 등록(글쓰기)
     @PostMapping(value = "/write", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public Board createBoard(Principal principal,
-							 @RequestPart("title") String title,
-							 @RequestPart("content") String content,
-							 @RequestPart("author") String author,
-							 @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+    public Board createBoard(
+            Principal principal,
+            @RequestPart("title") String title,
+            @RequestPart("content") String content,
+            @RequestPart("author") String author,
+            @RequestPart("boardType") String boardType, // 추가!
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
     	
 	    if (title == null || title.trim().isEmpty()) {
 	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "제목은 필수입니다.");
 	    }
 	    if (content == null || content.trim().isEmpty()) {
 	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "내용은 필수입니다.");
+	    }
+	    if (boardType == null || boardType.isBlank()) {
+	        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시판 타입은 필수입니다.");
 	    }
 	    
 	    Board board = new Board();
@@ -122,7 +150,10 @@ public class BoardController {
 	    } else {
 	        board.setAuthor(author);
 	    }
-
+	    
+	    BoardType type = BoardType.valueOf(boardType.toUpperCase());
+	    board.setBoardType(type);
+	    
 	    // 파일 저장
 	    if (files != null && !files.isEmpty()) {
 	    	String uploadDir = System.getProperty("user.dir") + File.separator + "uploads";

@@ -212,6 +212,13 @@
     outline: none;
 }
 
+.board-tab-btn.active {
+    border: 2px solid #e03e3e;
+    background: #fff5f5;
+    color: #e03e3e;
+    font-weight: 700;
+}
+
 /* 좋아요/스크랩 컬럼 스타일 */
 .like-badge {
     color: #e03e3e;

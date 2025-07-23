@@ -6,20 +6,35 @@ import { BASE_URL } from "../../api/baseUrl";
 import { useContext } from "react";
 import { AuthContext } from "../../AuthContext";
 
+import { useSearchParams } from "react-router-dom";
+
 import "react-quill-new/dist/quill.snow.css";
 import "./Board.css";
 
+const boardTypeLabel = {
+    ALL: "전체게시판",
+    GENERAL: "일반게시판",
+    ERROR: "에러게시판",
+    AI: "AI 추천게시판"
+};
+
 export default function BoardWrite() {
+    const navigate = useNavigate();
+    const { loginToken, user } = useContext(AuthContext);
+
+    // 폼 관리
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [files, setFiles] = useState([]);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(false);
+
     const [isDragActive, setIsDragActive] = useState(false);
     const fileInputRef = useRef(null);
-    const navigate = useNavigate();
 
-    const { loginToken, user } = useContext(AuthContext);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    const [searchParams] = useSearchParams();
+    const boardType = searchParams.get('boardType') || 'GENERAL'; // 기본값
 
     // 파일 제한 상수
     const MAX_FILES = 5;
@@ -99,6 +114,7 @@ export default function BoardWrite() {
             formData.append("title", title);
             formData.append("content", content);
             formData.append("author", user?.nickname);
+            formData.append("boardType", boardType);
             files.forEach((file) => {
                 formData.append("files", file);
             });
@@ -120,7 +136,7 @@ export default function BoardWrite() {
                 throw new Error("글 등록에 실패하였습니다.");
             } else {
                 alert("글이 등록되었습니다!");
-                navigate("/board");
+                navigate(`/?boardType=${boardType}`);
             }
         } catch (err) {
             setError(err.message);
@@ -144,6 +160,14 @@ export default function BoardWrite() {
         <div className="board-write-form">
             <h2>글쓰기</h2>
             <form onSubmit={handleSubmit}>
+                <div style={{
+                    marginBottom: 20,
+                    fontSize: 20,
+                    fontWeight: 600,
+                    color: "#e03e3e"
+                }}>
+                    {boardTypeLabel[boardType] || boardType}
+                </div>
                 <input
                     type="text"
                     placeholder="제목"
