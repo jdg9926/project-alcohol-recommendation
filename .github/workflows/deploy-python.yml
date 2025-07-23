@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 1. 최신 Python 코드 EC2에 복사 (python 폴더 전체)
+      # 1. 최신 Python 코드 EC2에 복사
       - name: Copy Python source code to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -22,7 +22,7 @@ jobs:
           source: "./python"
           target: "/home/ubuntu"
 
-      # 2. EC2에서 FastAPI 서버 재시작 (클린 가상환경 포함)
+      # 2. EC2에서 FastAPI 서버 재시작
       - name: Run FastAPI server on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -30,35 +30,35 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            set -e  # 실패 시 즉시 종료
+            set -e  # 명령어 실패시 즉시 워크플로 실패로 처리
 
             cd /home/ubuntu/python
 
-            # 1. 기존 가상환경 삭제 후 새로 생성 (항상 클린 설치)
+            # 기존 가상환경 삭제 후 새로 생성 (항상 클린 설치)
             rm -rf venv
             python3 -m venv venv
             source venv/bin/activate
 
-            # 2. pip 최신화 및 패키지 설치
+            # pip 최신화 및 패키지 설치
             pip install --upgrade pip
             pip install -r requirements.txt
 
-            # 3. 환경변수 (키파일 경로 꼭 최신값으로!)
+            # 환경변수 (키파일 경로 꼭 최신값으로)
             export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/python/qna-ai-proejct-5fd3a30365dd.json
 
-            # 4. FastAPI 서버 모두 종료 (중복 실행 방지)
+            # FastAPI 서버 모두 종료 (중복 실행 방지)
             screen -S fastapi-server -X quit || true
             pkill -f "uvicorn.*main:app" || true
 
-            # 5. FastAPI 서버 새로 실행 (screen 백그라운드)
+            # FastAPI 서버 새로 실행 (screen 백그라운드)
             screen -dmS fastapi-server venv/bin/python3 -m uvicorn main:app --host=0.0.0.0 --port=8000
 
-            # 6. 실행 확인 (디버깅)
+            # 실행 확인 (정상 실행 안되면 exit 1로 에러)
             sleep 2
-            pgrep -af uvicorn || echo "uvicorn 프로세스가 실행되지 않음"
+            pgrep -af uvicorn || (echo "uvicorn 프로세스가 실행되지 않음" && exit 1)
             screen -ls
 
-      # (선택) 에러 발생 시 서버 로그 자동 출력
+      # 3. 실패시에만 서버 로그 확인 (cat 실패해도 전체 실패로 안 만듦)
       - name: Show FastAPI screen log if failed
         if: failure()
         uses: appleboy/ssh-action@v1.0.0
@@ -67,4 +67,9 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cat /home/ubuntu/python/screenlog.0 || echo "No screenlog found"
+            echo "[에러 발생 시 FastAPI 서버 로그 확인]"
+            if [ -f /home/ubuntu/python/screenlog.0 ]; then
+              cat /home/ubuntu/python/screenlog.0
+            else
+              echo "No screenlog found"
+            fi
