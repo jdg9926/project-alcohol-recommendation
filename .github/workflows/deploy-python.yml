@@ -12,7 +12,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 1. 최신 Python 코드 EC2에 복사
       - name: Copy Python source code to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -22,7 +21,6 @@ jobs:
           source: "./python"
           target: "/home/ubuntu"
 
-      # 2. EC2에서 FastAPI 서버 재시작
       - name: Run FastAPI server on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -30,35 +28,27 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            set -e  # 명령어 실패시 즉시 워크플로 실패로 처리
-
+            set -e
             cd /home/ubuntu/python
-
-            # 기존 가상환경 삭제 후 새로 생성 (항상 클린 설치)
             rm -rf venv
             python3 -m venv venv
             source venv/bin/activate
-
-            # pip 최신화 및 패키지 설치
             pip install --upgrade pip
             pip install -r requirements.txt
-
-            # 환경변수 (키파일 경로 꼭 최신값으로)
             export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/python/qna-ai-proejct-5fd3a30365dd.json
-
-            # FastAPI 서버 모두 종료 (중복 실행 방지)
             screen -S fastapi-server -X quit || true
             pkill -f "uvicorn.*main:app" || true
-
-            # FastAPI 서버 새로 실행 (screen 백그라운드)
             screen -dmS fastapi-server venv/bin/python3 -m uvicorn main:app --host=0.0.0.0 --port=8000
-
-            # 실행 확인 (정상 실행 안되면 exit 1로 에러)
             sleep 2
-            pgrep -af uvicorn || (echo "uvicorn 프로세스가 실행되지 않음" && exit 1)
-            screen -ls
+            # 이 부분에서 FastAPI가 정상 기동됐는지 판단
+            if pgrep -af uvicorn | grep -q "main:app"; then
+              echo "FastAPI started successfully"
+              exit 0
+            else
+              echo "FastAPI failed to start"
+              exit 1
+            fi
 
-      # 3. 실패시에만 서버 로그 확인 (cat 실패해도 전체 실패로 안 만듦)
       - name: Show FastAPI screen log if failed
         if: failure()
         uses: appleboy/ssh-action@v1.0.0
