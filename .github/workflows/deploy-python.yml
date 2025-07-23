@@ -7,6 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # 전체 작업 타임아웃을 늘려줍니다. pip install이 오래 걸리는 경우를 대비합니다.
+    # 기본값은 360분(6시간)이지만, 명시적으로 설정하여 확실하게 합니다.
+    timeout-minutes: 15 # 필요에 따라 이 값을 더 늘릴 수 있습니다 (예: 20, 30 등)
 
     steps:
       - name: Checkout Repository
@@ -21,10 +24,16 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: "./python"
           target: "/home/ubuntu"
+          # 기존 파일을 덮어쓰기 위해 'overwrite: true'를 명시적으로 추가
+          # 기본값은 true이지만 명시적으로 작성하면 의도를 명확히 합니다.
+          overwrite: true
 
       # 2. EC2에서 FastAPI 서버 재시작
       - name: Run FastAPI server on EC2
         uses: appleboy/ssh-action@v1.0.0
+        # 이 특정 단계에 대한 타임아웃을 설정합니다.
+        # 만약 전체 작업 타임아웃이 충분하다면 생략해도 되지만, 특정 단계의 문제를 격리하는 데 유용합니다.
+        timeout-minutes: 10 # 이 단계에 할당된 시간을 필요에 따라 조정합니다.
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
@@ -32,31 +41,49 @@ jobs:
           script: |
             set -e  # 명령어 실패시 즉시 워크플로 실패로 처리
 
-            cd /home/ubuntu/python
+            PROJECT_DIR="/home/ubuntu/python"
+            # 가상 환경 경로를 변수로 정의하여 반복을 줄임
+            VENV_DIR="$PROJECT_DIR/venv"
+            CREDENTIALS_PATH="$PROJECT_DIR/qna-ai-proejct-5fd3a30365dd.json"
 
-            # 기존 가상환경 삭제 후 새로 생성 (항상 클린 설치)
-            rm -rf venv
-            python3 -m venv venv
-            source venv/bin/activate
+            cd "$PROJECT_DIR"
 
-            # pip 최신화 및 패키지 설치
+            echo ">>> [단계 1/5] 기존 가상환경 삭제 및 새로 생성 (클린 설치)"
+            rm -rf "$VENV_DIR"
+            python3 -m venv "$VENV_DIR"
+            source "$VENV_DIR/bin/activate"
+
+            echo ">>> [단계 2/5] pip 최신화 및 패키지 설치"
             pip install --upgrade pip
             pip install -r requirements.txt
 
+            echo ">>> [단계 3/5] 환경변수 설정"
             # 환경변수 (키파일 경로 꼭 최신값으로)
-            export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/python/qna-ai-proejct-5fd3a30365dd.json
+            export GOOGLE_APPLICATION_CREDENTIALS="$CREDENTIALS_PATH"
+            echo "GOOGLE_APPLICATION_CREDENTIALS set to: $GOOGLE_APPLICATION_CREDENTIALS"
 
+            echo ">>> [단계 4/5] 기존 FastAPI 서버 종료"
             # FastAPI 서버 모두 종료 (중복 실행 방지)
             screen -S fastapi-server -X quit || true
             pkill -f "uvicorn.*main:app" || true
+            echo "기존 FastAPI 서버 종료 완료."
 
-            # FastAPI 서버 새로 실행 (screen 백그라운드)
-            screen -dmS fastapi-server venv/bin/python3 -m uvicorn main:app --host=0.0.0.0 --port=8000
+            echo ">>> [단계 5/5] FastAPI 서버 새로 실행 (screen 백그라운드)"
+            # screenlog를 지정하여 로그 파일을 별도로 관리
+            screen -dmS fastapi-server -L -Logfile screenlog.0 "$VENV_DIR/bin/python3" -m uvicorn main:app --host=0.0.0.0 --port=8000
+            echo "FastAPI 서버 백그라운드 실행 시도."
 
-            # 실행 확인 (정상 실행 안되면 exit 1로 에러)
-            sleep 2
-            pgrep -af uvicorn || (echo "uvicorn 프로세스가 실행되지 않음" && exit 1)
-            screen -ls
+            echo ">>> [단계 5-1] 실행 확인 (정상 실행 안되면 exit 1로 에러)"
+            sleep 5 # 시작 시간을 충분히 주기 위해 2초에서 5초로 증가
+            if pgrep -af uvicorn; then
+                echo "uvicorn 프로세스가 정상적으로 실행 중입니다."
+                screen -ls
+            else
+                echo "uvicorn 프로세스가 실행되지 않았습니다!"
+                echo "screenlog.0 파일 내용:"
+                cat screenlog.0 || true # 로그 파일이 없을 경우 오류 방지
+                exit 1
+            fi
 
       # 3. 실패시에만 서버 로그 확인 (cat 실패해도 전체 실패로 안 만듦)
       - name: Show FastAPI screen log if failed
@@ -68,8 +95,13 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             echo "[에러 발생 시 FastAPI 서버 로그 확인]"
-            if [ -f /home/ubuntu/python/screenlog.0 ]; then
-              cat /home/ubuntu/python/screenlog.0
+            # screenlog.0 파일의 경로를 정확히 지정
+            LOG_FILE="/home/ubuntu/python/screenlog.0"
+            if [ -f "$LOG_FILE" ]; then
+              echo "--- $LOG_FILE 내용 ---"
+              cat "$LOG_FILE"
+              echo "----------------------"
             else
-              echo "No screenlog found"
+              echo "로그 파일 ($LOG_FILE)을 찾을 수 없습니다."
+              echo "FastAPI 서버가 정상적으로 시작되지 않았거나, screenlog가 생성되지 않았을 수 있습니다."
             fi
