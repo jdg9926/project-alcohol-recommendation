@@ -1,133 +1,159 @@
-name: Deploy FastAPI to EC2
+name: Deploy FastAPI to EC2 # 워크플로우 이름
 
 on:
   push:
-    branches: [master] # master 브랜치에 push될 때마다 워크플로우 실행
+    branches:
+      - master # master 브랜치에 코드가 push될 때 이 워크플로우가 트리거됩니다.
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest # GitHub Actions 러너 환경 설정
-    # 작업 전체의 타임아웃을 넉넉하게 설정.
-    # pip install이 오래 걸리거나, 다른 네트워크 지연이 발생할 경우를 대비합니다.
-    timeout-minutes: 20 # 필요에 따라 30분, 45분 등으로 더 늘릴 수 있습니다.
+    runs-on: ubuntu-latest # 이 작업이 실행될 GitHub Actions 러너의 운영체제입니다.
+    # 작업 전체의 타임아웃을 충분히 넉넉하게 설정합니다.
+    # pip install, 네트워크 지연, 서버 시작 시간 등 모든 요소를 고려합니다.
+    # 이전 30분으로도 문제가 지속된다면, 더 늘려야 합니다.
+    timeout-minutes: 45 # <-- **이 값을 이전보다 더 늘려봅니다.** (예: 45분, 60분 등)
 
     steps:
+      # 1. GitHub 저장소 체크아웃
       - name: Checkout Repository
-        uses: actions/checkout@v4 # 최신 코드 가져오기
+        uses: actions/checkout@v4 # 저장소 코드를 러너에 복사합니다.
 
-      # 1. 최신 Python 코드 EC2에 복사
-      - name: Copy Python source code to EC2
-        uses: appleboy/scp-action@v0.1.7 # SCP 액션을 사용하여 파일 복사
+      # 2. Python 소스 코드를 EC2 인스턴스로 복사
+      - name: Copy Python Source Code to EC2
+        uses: appleboy/scp-action@v0.1.7 # SCP 프로토콜을 사용하여 파일 전송
         with:
-          host: ${{ secrets.EC2_HOST }} # EC2 호스트 IP 주소 (GitHub Secret)
-          username: ${{ secrets.EC2_USER }} # EC2 사용자 이름 (GitHub Secret)
-          key: ${{ secrets.EC2_KEY }} # EC2 접속 SSH 프라이빗 키 (GitHub Secret)
+          host: ${{ secrets.EC2_HOST }} # EC2 인스턴스의 호스트명 또는 IP
+          username: ${{ secrets.EC2_USER }} # EC2 인스턴스 접속 사용자명
+          key: ${{ secrets.EC2_KEY }} # EC2 접속에 사용될 SSH 프라이빗 키
           source: "./python" # GitHub 저장소의 ./python 디렉토리
-          target: "/home/ubuntu" # EC2의 대상 디렉토리
-          overwrite: true # 기존 파일을 덮어쓰도록 설정 (명시적)
+          target: "/home/ubuntu" # EC2 인스턴스에서 코드가 배포될 경로
+          overwrite: true # 대상 경로에 파일이 존재하면 덮어쓰기
 
-      # 2. EC2에서 FastAPI 서버 재시작 스크립트 실행
-      - name: Run FastAPI server on EC2
-        uses: appleboy/ssh-action@v1.0.0 # SSH 액션을 사용하여 원격으로 스크립트 실행
-        # 이 특정 단계에 대한 타임아웃을 설정.
-        # 긴 스크립트 실행이나 네트워크 문제로 인한 지연에 대비합니다.
-        timeout-minutes: 15 # 작업 타임아웃보다 작거나 같게 설정 (예: 15분)
+      # 3. EC2에서 FastAPI 서버 설정 및 재시작
+      - name: Configure and Restart FastAPI Server on EC2
+        uses: appleboy/ssh-action@v1.0.0 # SSH 연결을 통해 원격 명령 실행
+        # 이 특정 SSH 세션에 대한 타임아웃입니다.
+        # 작업 전체 타임아웃보다는 짧거나 같아야 합니다.
+        timeout-minutes: 30 # <-- 이 단계의 타임아웃도 넉넉하게 설정합니다.
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          # debug: true # SSH 연결 및 명령 실행에 대한 상세 로그를 보려면 이 주석을 해제하세요.
+          # debug: true # SSH 연결 및 원격 명령 실행에 대한 상세 디버그 로그를 활성화하려면 주석 해제
           script: |
-            set -e  # 모든 명령어 실패 시 즉시 스크립트 종료 및 워크플로 실패 처리
+            set -e  # 모든 명령어 중 하나라도 실패하면 즉시 스크립트 실행 중단 (Fail-fast)
 
-            # EC2에 접속하는 실제 사용자 이름을 정확히 입력하세요. (예: ubuntu)
-            # `/home/ubuntu/python`은 프로젝트 코드가 복사될 EC2 내의 최종 경로입니다.
-            PROJECT_DIR="/home/ubuntu/python" 
-            VENV_DIR="$PROJECT_DIR/venv"
-            CREDENTIALS_PATH="$PROJECT_DIR/qna-ai-proejct-5fd3a30365dd.json"
-            SCREEN_LOG_FILE="$PROJECT_DIR/screenlog.0" # screen 세션 로그 파일 경로
+            # --- 변수 정의 ---
+            # EC2에 접속하는 실제 사용자 이름을 확인하고, 필요시 'ubuntu'를 수정합니다.
+            PROJECT_ROOT_DIR="/home/ubuntu/python" 
+            VIRTUAL_ENV_DIR="$PROJECT_ROOT_DIR/venv"
+            GOOGLE_CREDENTIALS_FILE="$PROJECT_ROOT_DIR/qna-ai-proejct-5fd3a30365dd.json"
+            SCREEN_LOG_OUTPUT="$PROJECT_ROOT_DIR/screenlog.0" # screen 세션의 출력이 기록될 파일
 
-            echo ">>> [초기화] 작업 디렉토리로 이동: $PROJECT_DIR"
-            # 프로젝트 디렉토리로 이동. 실패 시 명확한 오류 메시지와 함께 종료.
-            cd "$PROJECT_DIR" || { echo "ERROR: 작업 디렉토리($PROJECT_DIR)로 이동할 수 없습니다. 경로를 확인하세요. Exiting."; exit 1; }
+            echo "--- 배포 시작: $PROJECT_ROOT_DIR ---"
 
-            echo ">>> [단계 0/6] 'screen' 유틸리티 설치 확인 및 설치"
-            # 'screen' 명령어가 설치되어 있는지 확인하고, 없으면 설치를 시도합니다.
-            if ! command -v screen &> /dev/null; then
-                echo "'screen' 명령어를 찾을 수 없습니다. 설치를 시도합니다."
-                sudo apt-get update && sudo apt-get install -y screen
-                if [ $? -ne 0 ]; then # 설치 실패 시
-                    echo "ERROR: 'screen' 유틸리티 설치에 실패했습니다. 워크플로를 중단합니다."
-                    exit 1
-                fi
-            else
-                echo "'screen' 유틸리티가 이미 설치되어 있습니다."
-            fi
-
-            echo ">>> [단계 1/6] 기존 Python 가상 환경 삭제 및 새로 생성 (클린 설치)"
-            # 기존 가상 환경을 완전히 삭제하여 깨끗한 상태에서 다시 시작합니다.
-            rm -rf "$VENV_DIR"
-            # 새로운 Python 가상 환경을 생성합니다.
-            python3 -m venv "$VENV_DIR" || { echo "ERROR: Python 가상 환경 생성 실패. python3가 설치되어 있는지 확인하세요."; exit 1; }
-            # 새로 생성된 가상 환경을 활성화합니다.
-            source "$VENV_DIR/bin/activate" || { echo "ERROR: 가상 환경 활성화 실패."; exit 1; }
-
-            echo ">>> [단계 2/6] pip 최신화 및 패키지 설치"
-            # pip를 최신 버전으로 업데이트합니다.
-            pip install --upgrade pip || { echo "ERROR: pip 최신화 실패."; exit 1; }
-            # requirements.txt에 명시된 모든 Python 패키지를 설치합니다.
-            pip install -r requirements.txt || { echo "ERROR: requirements.txt 패키지 설치 실패."; exit 1; }
-            echo "Python 패키지 설치 완료."
-
-            echo ">>> [단계 3/6] GOOGLE_APPLICATION_CREDENTIALS 환경 변수 설정"
-            # Google Cloud 서비스 계정 키 파일 경로를 환경 변수로 설정합니다.
-            export GOOGLE_APPLICATION_CREDENTIALS="$CREDENTIALS_PATH"
-            echo "GOOGLE_APPLICATION_CREDENTIALS가 다음으로 설정되었습니다: $GOOGLE_APPLICATION_CREDENTIALS"
-
-            echo ">>> [단계 4/6] 기존 FastAPI 서버 종료 (중복 실행 방지)"
-            # 'fastapi-server'라는 이름의 screen 세션이 있다면 종료합니다.
-            screen -S fastapi-server -X quit || true
-            # uvicorn 프로세스를 강제로 종료합니다. (screen 외부에서 실행 중인 경우)
-            pkill -f "uvicorn.*main:app" || true
-            echo "기존 FastAPI 서버 및 uvicorn 프로세스 종료 완료."
-
-            echo ">>> [단계 5/6] FastAPI 서버 새로 실행 (screen 백그라운드)"
-            # 이전 screen 로그가 남아있지 않도록 로그 파일을 삭제합니다.
-            rm -f "$SCREEN_LOG_FILE"
-            # 'screen' 세션을 백그라운드에서 (dmS) 시작하고, 출력을 지정된 로그 파일에 기록합니다 (-L -Logfile).
-            # venv 내의 python3와 uvicorn을 사용하여 FastAPI 앱을 실행합니다.
-            screen -dmS fastapi-server -L -Logfile "$SCREEN_LOG_FILE" "$VENV_DIR/bin/python3" -m uvicorn main:app --host=0.0.0.0 --port=8000
-            # screen 명령 자체가 성공적으로 실행되었는지 확인합니다.
-            if [ $? -ne 0 ]; then
-                echo "ERROR: 'screen' 명령어로 FastAPI 서버 시작에 실패했습니다. 'screen' 유틸리티 문제이거나 실행 경로/권한 문제일 수 있습니다."
-                # 이 경우 screenlog.0이 생성되지 않았거나 비어 있을 수 있습니다.
+            # 1. 프로젝트 디렉토리로 이동
+            if ! cd "$PROJECT_ROOT_DIR"; then
+                echo "ERROR: 프로젝트 디렉토리($PROJECT_ROOT_DIR)로 이동할 수 없습니다. 경로를 확인하십시오."
                 exit 1
             fi
-            echo "FastAPI 서버 백그라운드 실행 시도 완료."
+            echo "✔ 프로젝트 디렉토리($PROJECT_ROOT_DIR)로 이동 완료."
 
-            echo ">>> [단계 6/6] FastAPI 서버 실행 확인"
-            # uvicorn 프로세스가 완전히 시작될 시간을 충분히 줍니다.
-            sleep 10 # 기존 5초에서 10초로 증가, 필요 시 더 늘릴 수 있습니다.
-
-            # 'main:app'을 포함하는 uvicorn 프로세스가 실행 중인지 확인합니다.
-            if pgrep -f "uvicorn.*main:app"; then
-                echo "uvicorn 프로세스가 정상적으로 실행 중입니다."
-                screen -ls # 현재 활성 screen 세션 목록을 출력합니다.
-            else
-                echo "ERROR: uvicorn 프로세스가 실행되지 않았습니다!"
-                echo "--- $SCREEN_LOG_FILE 내용 확인 ---"
-                # uvicorn이 실행되지 않은 경우 screenlog.0 내용을 출력하여 디버깅 정보를 제공합니다.
-                if [ -f "$SCREEN_LOG_FILE" ]; then
-                    cat "$SCREEN_LOG_FILE"
-                else
-                    echo "로그 파일 ($SCREEN_LOG_FILE)을 찾을 수 없습니다. screen이 로그를 기록하지 못했거나 서버가 너무 빠르게 종료된 것 같습니다."
+            # 2. 'screen' 유틸리티 확인 및 설치
+            echo "--- 'screen' 유틸리티 확인 ---"
+            if ! command -v screen &> /dev/null; then
+                echo "'screen' 명령어가 발견되지 않았습니다. 설치를 시도합니다."
+                if ! sudo apt-get update && sudo apt-get install -y screen; then
+                    echo "ERROR: 'screen' 유틸리티 설치에 실패했습니다. 배포를 중단합니다."
+                    exit 1
                 fi
-                exit 1 # uvicorn이 실행되지 않으면 워크플로를 실패로 처리합니다.
+                echo "✔ 'screen' 유틸리티 설치 완료."
+            else
+                echo "✔ 'screen' 유틸리티가 이미 설치되어 있습니다."
             fi
 
-      # 3. 실패시에만 서버 로그 확인 (위 스크립트에서 이미 확인하지만, 추가적인 안전 장치)
-      - name: Show FastAPI screen log if failed
-        if: failure() # 이전 단계에서 실패한 경우에만 이 단계를 실행합니다.
+            # 3. Python 가상 환경 설정
+            echo "--- Python 가상 환경 설정 ---"
+            echo "기존 가상 환경($VIRTUAL_ENV_DIR) 삭제 중..."
+            rm -rf "$VIRTUAL_ENV_DIR"
+            echo "새로운 가상 환경 생성 중..."
+            if ! python3 -m venv "$VIRTUAL_ENV_DIR"; then
+                echo "ERROR: Python 가상 환경 생성 실패. 'python3'가 시스템에 설치되어 있고 올바른지 확인하십시오."
+                exit 1
+            fi
+            echo "가상 환경 활성화 중..."
+            if ! source "$VIRTUAL_ENV_DIR/bin/activate"; then
+                echo "ERROR: 가상 환경 활성화 실패. 가상 환경 경로를 확인하십시오."
+                exit 1
+            fi
+            echo "✔ Python 가상 환경 설정 완료."
+
+            # 4. pip 최신화 및 종속성 설치
+            echo "--- Python 종속성 설치 ---"
+            echo "pip 최신 버전으로 업데이트 중..."
+            if ! pip install --upgrade pip; then
+                echo "ERROR: pip 최신화 실패."
+                exit 1
+            fi
+            echo "requirements.txt 파일로부터 패키지 설치 중..."
+            if ! pip install -r requirements.txt; then
+                echo "ERROR: requirements.txt에 명시된 패키지 설치 실패. 종속성 문제를 확인하십시오."
+                exit 1
+            fi
+            echo "✔ Python 패키지 설치 완료."
+
+            # 5. 환경 변수 설정
+            echo "--- 환경 변수 설정 ---"
+            export GOOGLE_APPLICATION_CREDENTIALS="$GOOGLE_CREDENTIALS_FILE"
+            echo "✔ GOOGLE_APPLICATION_CREDENTIALS가 다음 경로로 설정되었습니다: $GOOGLE_APPLICATION_CREDENTIALS"
+
+            # 6. 기존 FastAPI 서버 종료
+            echo "--- 기존 FastAPI 서버 종료 ---"
+            # 이름으로 된 screen 세션 종료
+            screen -S fastapi-server -X quit || true
+            # uvicorn 프로세스 강제 종료 (screen 외부에서 실행 중인 경우 포함)
+            pkill -f "uvicorn.*main:app" || true
+            echo "✔ 기존 FastAPI 서버 및 uvicorn 프로세스 종료 완료."
+
+            # 7. FastAPI 서버 새로 실행
+            echo "--- FastAPI 서버 새로 실행 (screen 백그라운드) ---"
+            # 이전 screen 로그 파일 삭제 (새로운 실행 로그를 깨끗하게 받기 위함)
+            rm -f "$SCREEN_LOG_OUTPUT"
+            # screen 세션을 백그라운드에서 시작하고 (-dmS), 모든 출력을 로그 파일에 기록합니다 (-L -Logfile).
+            screen -dmS fastapi-server -L -Logfile "$SCREEN_LOG_OUTPUT" "$VIRTUAL_ENV_DIR/bin/python3" -m uvicorn main:app --host=0.0.0.0 --port=8000
+            
+            # screen 명령 자체가 성공적으로 시작되었는지 확인 (uvicorn 시작 여부와는 별개)
+            if [ $? -ne 0 ]; then
+                echo "ERROR: 'screen' 명령어로 FastAPI 서버를 시작하는 데 실패했습니다. 'screen' 유틸리티 문제이거나 권한 문제일 수 있습니다."
+                exit 1
+            fi
+            echo "✔ FastAPI 서버 백그라운드 실행 시도 완료."
+
+            # 8. FastAPI 서버 실행 확인
+            echo "--- FastAPI 서버 실행 확인 ---"
+            # uvicorn 프로세스가 완전히 시작될 시간을 충분히 줍니다. (네트워크 및 로딩 시간 고려)
+            sleep 15 # <-- 기존 10초에서 15초로 증가. 필요 시 더 늘릴 수 있습니다.
+
+            # 'main:app'을 포함하는 uvicorn 프로세스가 실제로 실행 중인지 확인
+            if pgrep -f "uvicorn.*main:app"; then
+                echo "✔ uvicorn 프로세스가 정상적으로 실행 중입니다."
+                screen -ls # 현재 활성화된 screen 세션 목록 출력
+            else
+                echo "ERROR: uvicorn 프로세스가 실행되지 않았습니다! 배포 실패."
+                echo "--- $SCREEN_LOG_OUTPUT 파일 내용 (FastAPI 시작 로그) ---"
+                # uvicorn이 실행되지 않은 경우, screenlog 내용을 출력하여 문제 진단에 도움을 줍니다.
+                if [ -f "$SCREEN_LOG_OUTPUT" ]; then
+                    cat "$SCREEN_LOG_OUTPUT"
+                else
+                    echo "로그 파일 ($SCREEN_LOG_OUTPUT)을 찾을 수 없습니다. 'screen'이 로그를 기록하지 못했거나 서버가 즉시 종료된 것 같습니다."
+                fi
+                exit 1 # uvicorn이 실행되지 않으면 워크플로우를 실패 상태로 만듭니다.
+            fi
+            echo "--- 배포 완료 ---"
+
+      # 4. 실패 시에만 서버 로그 확인 (추가적인 디버깅/안전 장치)
+      - name: Show FastAPI Screen Log on Failure
+        if: failure() # 이전 단계에서 실패한 경우에만 이 단계를 실행
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
