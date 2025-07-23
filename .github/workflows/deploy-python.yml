@@ -2,64 +2,63 @@ name: Deploy FastAPI to EC2
 
 on:
   push:
-    branches: [master]
+    branches: [main] # 혹은 원하는 브랜치
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Copy Python source code to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          source: "./python"
-          target: "/home/ubuntu"
-
-      - name: Run FastAPI server on EC2
+      # SSH를 이용한 배포 (appleboy/ssh-action)
+      - name: Deploy with SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
           script: |
             set -e
-            cd /home/ubuntu/python
-            rm -rf venv
-            python3 -m venv venv
-            source venv/bin/activate
+
+            # 환경변수 세팅 (필요에 따라 변경)
+            PROJECT_DIR="/home/ubuntu/python"
+            VENV_DIR="$PROJECT_DIR/venv"
+            APP_MODULE="main:app"
+            PORT=8000
+
+            # 작업 디렉토리 이동
+            cd $PROJECT_DIR
+
+            # 기존 서버 중단 (screen/uvicorn)
+            screen -S fastapi-server -X quit || true
+            pkill -f "uvicorn.*$APP_MODULE" || true
+
+            # 가상환경 재생성 및 패키지 설치
+            rm -rf $VENV_DIR
+            python3 -m venv $VENV_DIR
+            source $VENV_DIR/bin/activate
             pip install --upgrade pip
             pip install -r requirements.txt
-            export GOOGLE_APPLICATION_CREDENTIALS=/home/ubuntu/python/qna-ai-proejct-5fd3a30365dd.json
-            screen -S fastapi-server -X quit || true
-            pkill -f "uvicorn.*main:app" || true
-            screen -dmS fastapi-server venv/bin/python3 -m uvicorn main:app --host=0.0.0.0 --port=8000
+
+            # GCP 자격증명 환경변수 (필요 시)
+            export GOOGLE_APPLICATION_CREDENTIALS="$PROJECT_DIR/qna-ai-proejct-5fd3a30365dd.json"
+
+            # FastAPI 서버 재기동 (screen 이용, 로그 파일 저장)
+            screen -dmS fastapi-server bash -c "
+              cd $PROJECT_DIR
+              $VENV_DIR/bin/python3 -m uvicorn $APP_MODULE --host=0.0.0.0 --port=$PORT &> fastapi.log
+            "
             sleep 2
-            # 이 부분에서 FastAPI가 정상 기동됐는지 판단
-            if pgrep -af uvicorn | grep -q "main:app"; then
-              echo "FastAPI started successfully"
+
+            # 정상 기동 확인
+            if pgrep -af "uvicorn.*$APP_MODULE" > /dev/null; then
+              echo '✅ FastAPI started successfully'
               exit 0
             else
-              echo "FastAPI failed to start"
+              echo '❌ FastAPI failed to start'
+              cat $PROJECT_DIR/fastapi.log || true
               exit 1
-            fi
-
-      - name: Show FastAPI screen log if failed
-        if: failure()
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            echo "[에러 발생 시 FastAPI 서버 로그 확인]"
-            if [ -f /home/ubuntu/python/screenlog.0 ]; then
-              cat /home/ubuntu/python/screenlog.0
-            else
-              echo "No screenlog found"
             fi
