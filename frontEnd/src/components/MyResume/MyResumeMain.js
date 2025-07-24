@@ -156,7 +156,6 @@ export default function MyResumeMain() {
         setMessage("");
         setIsError(false);
         try {
-            console.log("들어왓니")
             const res = await axios.post(`${BASE_URL}:8888/api/users/send-resume`, { email });
             if (res.data.success) {
                 setMessage("이메일로 이력서가 전송되었습니다.");

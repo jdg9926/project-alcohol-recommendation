@@ -11,6 +11,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://43.200.182.46:3000",
+        "http://43.200.182.46:8888",
         "http://project-alcohol-recommendation.s3-website.ap-northeast-2.amazonaws.com"
     ],
     allow_credentials=True,
