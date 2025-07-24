@@ -53,6 +53,7 @@ public class SecurityConfig {
                         "/api/users/check-nickname",
                         "/api/users/send-verification",
                         "/api/users/verify-code",
+                        "/api/users/send-resume",
                         // 공개 허용 - 조회성 API
                         "/api/board/list",
                         "/api/board/{id:[0-9]+}",

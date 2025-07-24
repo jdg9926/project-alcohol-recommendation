@@ -8,6 +8,8 @@ import { AuthContext } from "../../AuthContext";
 
 import { useSearchParams } from "react-router-dom";
 
+import { logErrorToBoard } from "../../utils/errorLogger";
+
 import "react-quill-new/dist/quill.snow.css";
 import "./Board.css";
 
@@ -128,17 +130,25 @@ export default function BoardWrite() {
             });
 
             if (!response.ok) {
-                try {
-                    
-                } catch (err) {
-                    setError(err.message);
-                }
-                throw new Error("글 등록에 실패하였습니다.");
+                // 서버에서 에러 메시지를 텍스트로 읽음 (FormData라 json이 아닐 수 있음)
+                const errorText = await response.text();
+                throw new Error(errorText || "글 등록에 실패하였습니다.");
             } else {
                 alert("글이 등록되었습니다!");
                 navigate(`/?boardType=${boardType}`);
             }
         } catch (err) {
+            await logErrorToBoard({
+                BASE_URL,
+                title: "게시글 등록",
+                errorDetail: err.message,
+                originTitle: title,
+                apiPath: "/api/board/write",
+                userInfo: user,
+                extraData: { boardType: "ERROR" },
+                loginToken
+            });
+            console.log(err)
             setError(err.message);
         } finally {
             setLoading(false);

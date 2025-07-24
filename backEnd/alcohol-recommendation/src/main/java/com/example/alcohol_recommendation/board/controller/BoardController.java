@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -37,6 +38,7 @@ import org.springframework.web.util.UriUtils;
 import com.example.alcohol_recommendation.auth.model.User;
 import com.example.alcohol_recommendation.auth.repository.UserRepository;
 import com.example.alcohol_recommendation.board.dto.BoardResponse;
+import com.example.alcohol_recommendation.board.dto.ErrorLogRequest;
 import com.example.alcohol_recommendation.board.dto.PagedResponse;
 import com.example.alcohol_recommendation.board.model.Board;
 import com.example.alcohol_recommendation.board.model.BoardLike;
@@ -123,7 +125,7 @@ public class BoardController {
             @RequestPart("title") String title,
             @RequestPart("content") String content,
             @RequestPart("author") String author,
-            @RequestPart("boardType") String boardType, // 추가!
+            @RequestPart("boardType") String boardType,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
     	
 	    if (title == null || title.trim().isEmpty()) {
@@ -374,5 +376,32 @@ public class BoardController {
         }
 
         return new BoardResponse(board, scrap);
+    }
+    
+    @PostMapping(value = "/errLog", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Board createErrorLog(@RequestBody ErrorLogRequest dto) {
+        // 필수 필드 체크
+        if (dto.getTitle() == null || dto.getTitle().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "에러 제목이 비어 있습니다.");
+        }
+        if (dto.getContent() == null || dto.getContent().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "에러 내용이 비어 있습니다.");
+        }
+        if (dto.getAuthor() == null || dto.getAuthor().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "에러 author(작성자)가 비어 있습니다.");
+        }
+
+        try {
+            Board board = new Board();
+            board.setTitle(dto.getTitle());
+            board.setContent(dto.getContent());
+            board.setAuthor(dto.getAuthor());
+            board.setBoardType(BoardType.ERROR);
+            board.setCreatedAt(LocalDateTime.now());
+            return boardRepository.save(board);
+        } catch (Exception e) {
+            // DB 등 내부 예외 처리: 500 에러와 메시지 리턴
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "에러 게시판 저장 실패: " + e.getMessage());
+        }
     }
 }

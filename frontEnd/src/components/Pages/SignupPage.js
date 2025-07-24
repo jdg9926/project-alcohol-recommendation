@@ -105,14 +105,10 @@ export default function SignupPage() {
                 : `${form.emailId}@${form.emailDomain}`;
 
         try {
-            const code = await sendVerificationCodeApi(email);
-            console.log(code);
-            setCodeSent(true);
-            
-            alert("인증번호를 전송했습니다.");
-
+            await sendVerificationCodeApi(email);
+            alert('인증번호가 발송되었습니다!');
         } catch (err) {
-            alert("이메일 전송 실패");
+            alert(err.message);
         }
     };
 

@@ -6,12 +6,16 @@ import java.util.Random;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.alcohol_recommendation.auth.model.EmailVerification;
 import com.example.alcohol_recommendation.auth.repository.EmailVerificationRepository;
 
+import jakarta.activation.DataSource;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.util.ByteArrayDataSource;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -56,6 +60,20 @@ public class EmailVerificationService {
         StringBuilder sb = new StringBuilder();
         for(int i=0; i<6; i++) sb.append(r.nextInt(10));
         return sb.toString();
+    }
+    
+    // 이력서 첨부 메일 전송
+    public void sendResumeWithAttachment(String toEmail, byte[] fileBytes, String fileName) throws Exception {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setTo(toEmail);
+        helper.setSubject("박세현 자기소개서 파일입니다.");
+        helper.setText("안녕하세요 자기소개서를 첨부합니다.\n\n감사합니다.");
+
+        DataSource dataSource = new ByteArrayDataSource(fileBytes, "application/pdf");
+        helper.addAttachment(fileName, dataSource);
+
+        mailSender.send(message);
     }
 }
 
