@@ -1,4 +1,5 @@
-// src/components/SliderInput.js
+import PropTypes from "prop-types";
+
 export default function SliderInput({ label, id, min, max, value, onChange, left, right }) {
     return (
         <div className="form-group">
@@ -24,3 +25,15 @@ export default function SliderInput({ label, id, min, max, value, onChange, left
         </div>
     );
 }
+
+// PropTypes 추가!
+SliderInput.propTypes = {
+    label: PropTypes.string.isRequired,
+    id: PropTypes.string.isRequired,
+    min: PropTypes.number.isRequired,
+    max: PropTypes.number.isRequired,
+    value: PropTypes.number.isRequired,
+    onChange: PropTypes.func.isRequired,
+    left: PropTypes.string,      // 양쪽 라벨은 선택(옵션)
+    right: PropTypes.string,
+};

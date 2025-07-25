@@ -1,15 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import ReactQuill from "react-quill-new";
+import { useState, useRef, useCallback, useEffect, useContext } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+
+import { AuthContext } from "../../AuthContext";
+import { logErrorToBoard } from "../../utils/errorLogger";
 import { BASE_URL } from "../../api/baseUrl";
 
-import { useContext } from "react";
-import { AuthContext } from "../../AuthContext";
-
-import { useSearchParams } from "react-router-dom";
-
-import { logErrorToBoard } from "../../utils/errorLogger";
-
+import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import "./Board.css";
 
@@ -104,8 +100,8 @@ export default function BoardWrite() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!title || !title.trim()) return alert("제목은 필수입니다.");
-        if (!content || !content.trim()) return alert("내용은 필수입니다.");
+        if (!title?.trim()) return alert("제목은 필수입니다.");
+        if (!content?.trim()) return alert("내용은 필수입니다.");
 
         setLoading(true);
         setError(null);
@@ -166,6 +162,8 @@ export default function BoardWrite() {
         ]
     };
 
+    console.log("files :::", files);
+
     return (
         <div className="board-write-form">
             <h2>글쓰기</h2>
@@ -201,49 +199,53 @@ export default function BoardWrite() {
                 </div>
 
                 {/* Drag & Drop 파일 업로드 */}
-                <div
+                <button
+                    type="button"
                     className={`file-dropzone${isDragActive ? " drag-active" : ""}`}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDragEnter={handleDragOver}
                     tabIndex={0}
-                    role="button"
-                    onClick={() => !loading && fileInputRef.current.click()}
-                    style={{ outline: isDragActive ? "2px solid #2563eb" : "none" }}
+                    style={{ outline: isDragActive ? "2px solid #2563eb" : "none", width: "100%" }}
+                    disabled={loading}
                 >
-                    파일을 이곳에 드래그하거나{" "}
-                    <span
-                        style={{
-                            color: "#2563eb",
-                            textDecoration: "underline",
-                            cursor: "pointer"
-                        }}
-                        onClick={e => {
-                            e.stopPropagation();
-                            !loading && fileInputRef.current.click();
-                        }}
-                    >여기</span>
-                    를 클릭해 첨부하세요.
-                    <input
-                        ref={fileInputRef}
-                        id="fileInput"
-                        type="file"
-                        multiple
-                        style={{ display: "none" }}
-                        onChange={handleFileChange}
-                        disabled={loading}
-                        accept="*"
-                    />
-                    <span className="file-info">
-                        (최대 {MAX_FILES}개, 10MB 이하 파일만 첨부)
-                    </span>
-                </div>
+                파일을 이곳에 드래그하거나{" "}
+                <label
+                    htmlFor="fileInput"
+                    style={{
+                        color: "#2563eb",
+                        textDecoration: "underline",
+                        cursor: loading ? "not-allowed" : "pointer",
+                        display: "inline"
+                    }}
+                    onClick={e => e.stopPropagation()} // 드롭존의 onClick 이벤트 전파 막기
+                >
+                    여기
+                </label>
+                를 클릭해 첨부하세요.
+                <input
+                    ref={fileInputRef}
+                    id="fileInput"
+                    type="file"
+                    multiple
+                    style={{ display: "none" }}
+                    onChange={handleFileChange}
+                    disabled={loading}
+                    accept="*"
+                />
+                <span className="file-info" style={{ display: "block", marginTop: 8 }}>
+                    (최대 {MAX_FILES}개, 10MB 이하 파일만 첨부)
+                </span>
+                </button>
 
                 {/* 파일 미리보기 */}
                 <ul className="file-preview-list">
                     {files.map((file, i) => (
-                        <li key={i} className="file-preview-item">
+                        <li
+                            key={file.name + '_' + file.size + '_' + file.lastModified}
+                            className="file-preview-item"
+                        >
                             {previews[i] ? (
                                 <img
                                     src={previews[i]}
@@ -259,7 +261,8 @@ export default function BoardWrite() {
                                 onClick={() => removeFile(i)}
                                 className="file-remove-btn"
                                 disabled={loading}
-                            >삭제</button>
+                            >삭제
+                            </button>
                         </li>
                     ))}
                 </ul>

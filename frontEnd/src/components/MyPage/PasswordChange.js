@@ -15,7 +15,7 @@ export default function PasswordChange() {
         e.preventDefault();
         setMessage("");
 
-        // 1. 입력값 유효성 체크
+        // 입력값 유효성 체크
         if (!oldPw || !newPw || !confirmPw) {
             setMessage("모든 항목을 입력해주세요.");
             return;
@@ -44,7 +44,14 @@ export default function PasswordChange() {
                 })
             });
 
-            const data = await response.json().catch(() => ({}));
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                // 서버가 JSON이 아닌 값을 반환하는 경우 등
+                setMessage("서버에서 올바른 응답을 받지 못했습니다.");
+            }
+
             if (response.ok) {
                 setMessage("비밀번호가 성공적으로 변경되었습니다!");
                 setTimeout(() => {
@@ -54,7 +61,8 @@ export default function PasswordChange() {
                 setMessage(data?.message || "비밀번호 변경 실패");
             }
         } catch (error) {
-            setMessage("비밀번호 변경 오류");
+            setMessage("비밀번호 변경 중 네트워크 오류가 발생했습니다.");
+            console.error("비밀번호 변경 요청 오류:", error);
         } finally {
             setLoading(false);
         }

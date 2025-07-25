@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import axios from "axios";
 import { tasteOptions, aromaOptions } from "../../Data/options";
 
@@ -10,6 +11,22 @@ import { BASE_URL } from "../../api/baseUrl";
 
 /* 스타일 */
 import "./WineRecommendForm.css";
+
+// 여운 값을 한글로 변환해주는 함수
+function getFinishText(finish) {
+    switch (finish) {
+        case "short":
+            return "짧은 편";
+        case "medium":
+            return "중간 정도";
+        case "long":
+            return "긴 편";
+        case "very-long":
+            return "매우 긴 편";
+        default:
+            return "";
+    }
+}
 
 export default function WineRecommendForm({ onRecommend }) {
     // 상태 관리
@@ -26,22 +43,21 @@ export default function WineRecommendForm({ onRecommend }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // 삼항 연산자 → 함수로 치환
+        const finishText = getFinishText(finish);
+
         const userInput = {
             taste: taste.join(", "),
             smell: aroma.join(", "),
-            finish:
-                finish === "short" ? "짧은 편" :
-                finish === "medium" ? "중간 정도" :
-                finish === "long" ? "긴 편" :
-                finish === "very-long" ? "매우 긴 편" : "",
+            finish: finishText,
             alcohol_content: alcohol ? alcohol + "%" : "",
             body: String(body),
             tannin: String(tannin),
             sweetness: String(sweetness),
-            sourness: String(acidity),  // acidity → sourness
+            sourness: String(acidity), // acidity → sourness
             price: budget ? `${budget}원` : "상관없음"
         };
-        
+
         console.log("userInput ::", userInput);
         try {
             const response = await axios.post(`${BASE_URL}:8000/recommend`, userInput);
@@ -77,27 +93,27 @@ export default function WineRecommendForm({ onRecommend }) {
 
                     <div className="form-row">
                         <div className="form-group">
-                        <label htmlFor="finish">여운은 어떤가요?</label>
-                        <select id="finish" value={finish} onChange={e => setFinish(e.target.value)}>
-                            <option value="">모름</option>
-                            <option value="short">짧은 편</option>
-                            <option value="medium">중간 정도</option>
-                            <option value="long">긴 편</option>
-                            <option value="very-long">매우 긴 편</option>
-                        </select>
+                            <label htmlFor="finish">여운은 어떤가요?</label>
+                            <select id="finish" value={finish} onChange={e => setFinish(e.target.value)}>
+                                <option value="">모름</option>
+                                <option value="short">짧은 편</option>
+                                <option value="medium">중간 정도</option>
+                                <option value="long">긴 편</option>
+                                <option value="very-long">매우 긴 편</option>
+                            </select>
                         </div>
                         <div className="form-group">
-                        <label htmlFor="alcohol">도수는 몇 % 인가요?</label>
-                        <input
-                            type="number"
-                            id="alcohol"
-                            min="0"
-                            max="20"
-                            step="1"
-                            placeholder="예: 13"
-                            value={alcohol}
-                            onChange={e => setAlcohol(e.target.value)}
-                        />
+                            <label htmlFor="alcohol">도수는 몇 % 인가요?</label>
+                            <input
+                                type="number"
+                                id="alcohol"
+                                min="0"
+                                max="20"
+                                step="1"
+                                placeholder="예: 13"
+                                value={alcohol}
+                                onChange={e => setAlcohol(e.target.value)}
+                            />
                         </div>
                     </div>
 
@@ -109,12 +125,12 @@ export default function WineRecommendForm({ onRecommend }) {
                     <div className="form-group">
                         <label htmlFor="budget">예산은 얼마인가요?</label>
                         <input
-                        type="number"
-                        id="budget"
-                        min="0"
-                        placeholder="예: 50000 (원)"
-                        value={budget}
-                        onChange={e => setBudget(e.target.value)}
+                            type="number"
+                            id="budget"
+                            min="0"
+                            placeholder="예: 50000 (원)"
+                            value={budget}
+                            onChange={e => setBudget(e.target.value)}
                         />
                     </div>
 
@@ -126,3 +142,8 @@ export default function WineRecommendForm({ onRecommend }) {
         </div>
     );
 }
+
+// PropTypes 추가 (onRecommend는 함수, 선택적)
+WineRecommendForm.propTypes = {
+    onRecommend: PropTypes.func,
+};

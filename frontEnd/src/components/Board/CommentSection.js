@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useContext } from "react";
+import PropTypes from "prop-types";
 import { AuthContext } from "../../AuthContext";
 import { BASE_URL } from "../../api/baseUrl";
 import "./CommentSection.css";
@@ -22,6 +23,19 @@ function CommentItem({ c, boardId, onDelete, canDelete }) {
         </li>
     );
 }
+
+// === ✅ PropTypes 추가 ===
+CommentItem.propTypes = {
+    c: PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+        author: PropTypes.string.isRequired,
+        createdAt: PropTypes.string.isRequired,
+        content: PropTypes.string.isRequired
+    }).isRequired,
+    boardId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+    onDelete: PropTypes.func.isRequired,
+    canDelete: PropTypes.bool
+};
 
 // 댓글 전체 영역
 export default function CommentSection({ boardId }) {
@@ -49,7 +63,7 @@ export default function CommentSection({ boardId }) {
             alert("댓글 작성은 로그인 후 가능합니다.");
             return;
         }
-        if (!input.trim()) return;
+        if (!input?.trim()) return;
 
         const res = await fetch(`${BASE_URL}:8888/api/board/${boardId}/comments`, {
             method: "POST",
@@ -57,7 +71,7 @@ export default function CommentSection({ boardId }) {
                 "Content-Type": "application/json",
                 "Authorization": loginToken ? `Bearer ${loginToken}` : undefined
             },
-            body: JSON.stringify({ content: input, author: user?.nickname}),
+            body: JSON.stringify({ content: input, author: user?.nickname }),
         });
         if (res.ok) {
             setInput("");
@@ -137,3 +151,8 @@ export default function CommentSection({ boardId }) {
         </div>
     );
 }
+
+// === ✅ CommentSection도 propTypes 명시 ===
+CommentSection.propTypes = {
+    boardId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired
+};

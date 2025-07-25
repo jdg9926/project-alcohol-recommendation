@@ -1,15 +1,15 @@
 /* 전체 컨테이너 */
 .auth-container {
     max-width: 500px;
-    margin: 4rem auto;
+    margin: 4rem auto 0 auto;
     padding: 2.5rem 2rem;
     background-color: #fff;
     border-radius: 8px;
     border: 1px solid #e1e3e5;
-    margin-bottom: 0px;
     object-fit: contain;
 }
 
+/* 폼 기본 구조 */
 .auth-form {
     display: flex;
     flex-direction: column;
@@ -26,8 +26,10 @@
     display: block;
 }
 
+/* ----- input 스타일 (중복 없이 한 번에) ----- */
 .auth-form input {
     width: 100%;
+    height: 35px;
     padding: 0.7rem 0.85rem;
     margin-top: 0.25rem;
     border: 1px solid #cccccc;
@@ -37,18 +39,18 @@
     transition: border-color 0.2s;
     box-sizing: border-box;
 }
-
 .auth-form input:focus {
     outline: none;
     border-color: #e03e3e;
     box-shadow: 0 0 0 2px rgba(0, 170, 255, 0.12);
 }
 
-/* 버튼 스타일 */
+/* 버튼 스타일 (form 안 기본 버튼) */
 .auth-form button {
     width: 100%;
+    height: 40px;
     box-sizing: border-box;
-    padding: 0.85rem;
+    padding: 0;
     margin-top: 0.7rem;
     background-color: #e03e3e;
     color: #fff;
@@ -59,6 +61,9 @@
     cursor: pointer;
     transition: background-color 0.19s, transform 0.12s;
     letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .auth-form button:hover {
@@ -70,11 +75,7 @@
     transform: translateY(0) scale(1.0);
 }
 
-.auth-form input {
-    height: 35px;
-    box-sizing: border-box;
-}
-
+/* 이메일 입력 그룹 */
 .email-group {
     display: flex;
     align-items: center;
@@ -85,8 +86,7 @@
 .email-id,
 .email-domain,
 .email-select {
-    /* select에도 동일 적용! */
-    width: 400px;   /* 기존 110px → 140px 또는 그 이상 */
+    width: 400px;
     min-width: 0;
     padding: 0.4rem 0.5rem;
     border: 1px solid #cccccc;
@@ -95,19 +95,15 @@
     background: #fff;
     transition: border-color 0.2s;
     box-sizing: border-box;
+    height: 35px;
 }
-
 .email-select {
     background: #fff;
-    /* 브라우저 기본 스타일에 따라 높이 맞추기 */
-    height: 35px; /* input 높이와 맞춰주는 옵션, 필요시 조정 */
 }
-
 .email-domain:disabled {
     background: #f5f5f5;
     color: #999;
 }
-
 .email-at {
     font-size: 1.1rem;
     color: #555;
@@ -115,9 +111,10 @@
     user-select: none;
 }
 
+/* 광고 영역 */
 .left-ad-bar {
     width: 465px;
-    margin: 0 auto 2rem auto;
+    margin: 8px auto 2rem auto;
     border-radius: 8px;
     border: 1px solid #e1e3e5;
     overflow: hidden;
@@ -126,7 +123,6 @@
     align-items: stretch;
     justify-content: center;
     height: auto;
-    margin-top: 8px;
 }
 
 .left-ad-img {
@@ -138,26 +134,22 @@
     background: #fff;
 }
 
-/* 회원가입의 중복확인 버튼 */
+/* 회원가입의 중복확인 버튼/인라인 구조 */
 .inline-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-
 .inline-wrapper {
   display: flex;
   gap: 8px;
   width: 100%;
 }
-
 .inline-wrapper input {
   flex: 1;
   height: 35px;
-  width: auto !important; /* 기존 400px 무시 */
-  /* height: 40px !important; 기존 높이 유지 */
+  width: auto !important;
 }
-
 .inline-wrapper .duplicate-button {
   width: 100px;
   height: 35px;
@@ -169,8 +161,7 @@
   white-space: nowrap;
   margin: 5px 0 0 0;
 }
-
-.inline-duplicate-wrapper{
+.inline-duplicate-wrapper {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -178,8 +169,9 @@
     flex: 1;
     height: 30px;
 }
-.duplicate-send-button, .duplicate-check-button,
-.auth-form button {
+
+/* 인증 등 부가 버튼 */
+.duplicate-send-button, .duplicate-check-button {
     width: 100%;
     height: 35px;
     border: 1px solid #cccccc;
@@ -189,10 +181,11 @@
     padding: 0.3rem 0.5rem;
 }
 
+/* 가입 버튼 */
 .signup-btn {
   width: 100%;
   height: 40px;
-  background: #e03e3e;  /* 활성화(파랑) */
+  background: #e03e3e;
   color: #fff;
   font-weight: 700;
   border: none;
@@ -202,13 +195,11 @@
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
-
 .signup-btn:disabled {
-  background: #d1d5db; /* 회색 */
+  background: #d1d5db;
   color: #888;
   cursor: not-allowed !important;
 }
-
 .signup-btn:disabled,
 .signup-btn:disabled:hover,
 .signup-btn:disabled:active,

@@ -4,7 +4,7 @@ import { AuthContext } from "../../AuthContext";
 
 export default function ProfileEdit() {
     const { user, loginToken, setUser } = useContext(AuthContext);
-    const [nickname, setNickname] = useState(user.nickname);
+    const [nickname, setNickname] = useState(user?.nickname ?? "");
     const [message, setMessage] = useState("");
 
     const handleSubmit = async (e) => {
@@ -24,15 +24,16 @@ export default function ProfileEdit() {
             } else {
                 setMessage("닉네임이 수정되었습니다.");
                 const data = await response.json();
-                if (data && data.nickname) setUser(data);
+                if (data?.nickname) setUser(data);
 
                 setTimeout(() => {
                     window.location.reload();
                 }, 1000);
             }
 
-        } catch {
+        } catch (err) {
             setMessage("수정 오류");
+            // 필요시: console.error(err);
         }
     };
 

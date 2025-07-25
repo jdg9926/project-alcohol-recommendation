@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Error from "../Common/Error";
-
 import { BASE_URL } from '../../api/baseUrl';
 
 export default function FindPasswordPage() {
@@ -34,28 +33,26 @@ export default function FindPasswordPage() {
             setInfo('비밀번호 재설정 링크가 이메일로 발송되었습니다.');
         } catch (err) {
             setError(err.message);
-        } finally {
-
         }
+        // finally 블록은 제거
     };
 
-    
     if (error) return <Error type={error.type} detail={error.detail} />;
 
     return (
         <div className="auth-container">
             <form onSubmit={handleSubmit} className="auth-form">
                 <label>
-                    아이디
+                    아이디{" "}
                     <input
-                        type="userId"
+                        type="text"
                         value={userId}
                         onChange={e=>setUserId(e.target.value)}
                         required 
                     />
                 </label>
                 <label>
-                    이메일
+                    이메일{" "}
                     <input
                         type="email"
                         value={email}
@@ -70,7 +67,7 @@ export default function FindPasswordPage() {
                     {info}
                 </p> 
             }
-            { error && <p className="error">{error}</p> }
+            {/* 아래 error는 위에서 Error 컴포넌트로 이미 처리했으므로 필요 없다면 삭제 */}
             <button 
                 onClick={()=>navigate('/login')}
                 style={{

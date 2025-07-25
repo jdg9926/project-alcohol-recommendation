@@ -36,7 +36,7 @@ export default function FindIdPage() {
         <div className="auth-container">
             <form onSubmit={handleSubmit} className="auth-form">
                 <label>
-                    등록된 이메일
+                    등록된 이메일{" "}
                     <input
                         type="email"
                         value={email}

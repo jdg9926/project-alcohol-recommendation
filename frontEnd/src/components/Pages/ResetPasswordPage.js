@@ -42,23 +42,23 @@ export default function ResetPasswordPage() {
             {!info && (
                 <form onSubmit={handleSubmit} className="auth-form">
                     <label>
-                        새 비밀번호
+                        새 비밀번호{" "}
                         <input
-                        type="password"
-                        name="newPassword"
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        required minLength={6}
+                            type="password"
+                            name="newPassword"
+                            value={newPassword}
+                            onChange={e => setNewPassword(e.target.value)}
+                            required minLength={6}
                         />
                     </label>
                     <label>
-                        새 비밀번호 확인
+                        새 비밀번호 확인{" "}
                         <input
-                        type="password"
-                        name="newPasswordCheck"
-                        value={newPasswordCheck}
-                        onChange={e => setNewPasswordCheck(e.target.value)}
-                        required minLength={6}
+                            type="password"
+                            name="newPasswordCheck"
+                            value={newPasswordCheck}
+                            onChange={e => setNewPasswordCheck(e.target.value)}
+                            required minLength={6}
                         />
                     </label>
                     <button type="submit">비밀번호 변경</button>
