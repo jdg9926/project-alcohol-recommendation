@@ -1,4 +1,5 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { getMe } from './api/auth';
 
 export const AuthContext = createContext({
@@ -23,6 +24,7 @@ export function AuthProvider({ children }) {
                     setUser(me);
                     localStorage.setItem('user', JSON.stringify(me));
                 } catch (err) {
+                    console.error("getMe() 호출 실패:", err);
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     setUser(null);
@@ -37,7 +39,7 @@ export function AuthProvider({ children }) {
         fetchUser();
     }, [loginToken]);
 
-    // 로그아웃 함수 개선
+    // 로그아웃 함수
     const logout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -45,19 +47,25 @@ export function AuthProvider({ children }) {
         setLoginToken(null);
     };
 
+    const contextValue = useMemo(() => ({
+        user,
+        setUser,
+        logout,
+        loginToken,
+        setLoginToken,
+    }), [user, loginToken]);
+
     if (loading) {
         return <div>로딩 중...</div>;
     }
 
     return (
-        <AuthContext.Provider value={{
-            user,
-            setUser,
-            logout,
-            loginToken,
-            setLoginToken,
-        }}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );
 }
+
+AuthProvider.propTypes = {
+    children: PropTypes.node.isRequired,
+};

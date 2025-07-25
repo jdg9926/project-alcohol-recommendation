@@ -13,8 +13,8 @@ export default function BoardEdit() {
     // 게시글, 첨부파일 상태
     const [form, setForm] = useState({ title: "", content: "" });
     const [loading, setLoading] = useState(true);
-    const [oldFiles, setOldFiles] = useState([]); // {save, origin, deleted}
-    const [newFiles, setNewFiles] = useState([]); // File[]
+    const [oldFiles, setOldFiles] = useState([]);
+    const [newFiles, setNewFiles] = useState([]);
     const [isDragActive, setIsDragActive] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -165,6 +165,9 @@ export default function BoardEdit() {
         ]
     };
 
+    console.log("oldFiles :::", oldFiles);
+    console.log("newFiles :::", newFiles);
+
     return (
         <div className="board-write-form">
             <h2>게시글 수정</h2>
@@ -201,19 +204,23 @@ export default function BoardEdit() {
                 </div>
                 {/* 기존 첨부파일 */}
                 {oldFiles.length > 0 && (
-                    <div className="file-preview-list" style={{marginBottom:10}}>
+                    <div className="file-preview-list" style={{marginBottom: 10}}>
                         <b>기존 첨부파일:</b>
                         <ul className="file-preview-list">
-                            {oldFiles.map((f, i) => (
-                                <li key={i} className="file-preview-item">
-                                    <span style={{
-                                        textDecoration: f.deleted ? "line-through" : "none",
-                                        color: f.deleted ? "#aaa" : "#444"
-                                    }}>{f.origin}</span>
+                            {oldFiles.map((f) => (
+                                <li key={f.save} className="file-preview-item">
+                                    <span 
+                                        style={{
+                                            textDecoration: f.deleted ? "line-through" : "none",
+                                            color: f.deleted ? "#aaa" : "#444"
+                                        }}
+                                    >
+                                        {f.origin}
+                                    </span>
                                     <button
                                         type="button"
                                         className="file-remove-btn"
-                                        onClick={() => handleRemoveOld(i)}
+                                        onClick={() => handleRemoveOld(f.save)}
                                     >
                                         {f.deleted ? "복원" : "삭제"}
                                     </button>
@@ -223,53 +230,55 @@ export default function BoardEdit() {
                     </div>
                 )}
                 {/* 새 첨부파일 */}
-                <div
+                <button
+                    type="button"
                     className={`file-dropzone${isDragActive ? " drag-active" : ""}`}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     tabIndex={0}
-                    role="button"
                     onClick={() => fileInputRef.current.click()}
                     style={{ outline: isDragActive ? "2px solid #2563eb" : "none" }}
                 >
-                    <span style={{color:"#2563eb", textDecoration:"underline"}}>여기</span>를 클릭해 파일 추가
-                    <input
-                        type="file"
-                        multiple
-                        style={{ display: "none" }}
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        accept="*"
-                    />
+                    <label style={{color:"#2563eb", textDecoration:"underline", cursor:"pointer"}}>
+                        여기
+                        <input
+                            type="file"
+                            multiple
+                            style={{ display: "none" }}
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            accept="*"
+                        />
+                    </label>
+                    를 클릭해 파일 추가
                     <span className="file-info">
                         (최대 {MAX_FILES}개, 10MB 이하 파일만 첨부)
                     </span>
-                </div>
+                </button>
                 {/* 새 첨부파일 리스트 */}
-                {newFiles.length > 0 && (
-                    <ul className="file-preview-list">
-                        {newFiles.map((f, i) => (
-                            <li key={i} className="file-preview-item">
-                                {previews[i] ? (
-                                    <img
-                                        src={previews[i]}
-                                        alt={f.name}
-                                        className="file-thumb"
-                                    />
-                                ) : (
-                                    <span className="file-icon" style={{ marginRight: 8 }}>📎</span>
-                                )}
-                                <span>{f.name}</span>
-                                <button
-                                    type="button"
-                                    className="file-remove-btn"
-                                    onClick={() => removeNewFile(i)}
-                                >삭제</button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                {newFiles.map((f, i) => (
+                    <li key={f.name + '_' + f.size + '_' + f.lastModified}
+                        className="file-preview-item"
+                    >
+                        {previews[i] ? (
+                            <img
+                                src={previews[i]}
+                                alt={f.name}
+                                className="file-thumb"
+                            />
+                        ) : (
+                            <span className="file-icon" style={{ marginRight: 8 }}>📎</span>
+                        )}
+                        <span>{f.name}</span>
+                        <button
+                            type="button"
+                            className="file-remove-btn"
+                            onClick={() => removeNewFile(i)}
+                        >삭제
+                        </button>
+                    </li>
+                ))}
                 <div className="board-write-btns">
                     <button type="submit" className="board-write-btn">저장</button>
                     <button type="button" className="board-write-btn board-write-cancel" onClick={() => navigate(`/board/${id}?boardType=${boardType}`)}>취소</button>

@@ -15,32 +15,37 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 28px;
+    margin-bottom: 0;   /* margin-bottom: 0; (정렬바가 아래쪽 여백 담당) */
 }
 
 .board-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
     color: #e03e3e;
+    margin: 0;
+    letter-spacing: -1.2px;
 }
 
 .board-write-btn {
     background: #e03e3e;
     color: #fff;
-    padding: 9px 28px;
+    padding: 7px 18px;
     border-radius: 20px;
-    font-size: 1.05rem;
-    font-weight: 700;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
     border: none;
     transition: background 0.16s;
     cursor: pointer;
-    text-decoration: none;
     display: inline-block;
 }
-
 .board-write-btn:hover {
     background: #b82b2b;
+}
+.board-write-btn:disabled {
+    background: #eee;
+    color: #aaa;
+    cursor: not-allowed;
 }
 
 .board-table {
@@ -49,13 +54,12 @@
     background: #fff;
     font-size: 1.09rem;
 }
-
 .board-table th,
 .board-table td {
     padding: 13px 8px;
     text-align: center;
+    vertical-align: middle;
 }
-
 .board-table thead th {
     background: #faf8f9;
     color: #c13a3a;
@@ -63,33 +67,28 @@
     border-bottom: 2px solid #ececec;
     font-size: 1.08rem;
 }
-
 .board-table tbody td {
     color: #444;
     border-bottom: 1px solid #f1f1f3;
 }
-
 .board-table td.board-title-cell {
-    text-align: left;
+    text-align: left !important;
     padding-left: 16px;
 }
-
 .board-table th.board-col-title,
 .board-table td.board-col-title {
-    width: 60%;    /* 제목 폭 넓게 */
+    width: 60%;
     min-width: 180px;
 }
-
 .board-table th.board-col-author,
 .board-table td.board-col-author {
-    width: 10%;    /* 작성자 폭 좁게 */
+    width: 10%;
     min-width: 70px;
-    text-align: left
+    text-align: left;
 }
-
 .board-table th.board-col-date,
 .board-table td.board-col-date {
-    width: 15%;    /* 날짜 폭 적당히 */
+    width: 15%;
     min-width: 120px;
 }
 
@@ -99,7 +98,6 @@
     font-weight: 500;
     transition: color 0.16s;
 }
-
 .board-link:hover {
     color: #e03e3e;
     text-decoration: underline;
@@ -123,7 +121,6 @@
     margin: 32px 0 0 0;
     gap: 16px;
 }
-
 .board-pagination button {
     background: #ececec;
     color: #222;
@@ -135,7 +132,6 @@
     cursor: pointer;
     transition: background 0.18s;
 }
-
 .board-pagination button:disabled {
     background: #f4f4f4;
     color: #bbb;
@@ -152,52 +148,19 @@
 }
 
 /* ==== 정렬바 ==== */
-.board-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0;    /* 아래쪽 여백은 sort-bar에서 */
-}
-
-.board-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #e03e3e;
-    margin: 0;
-    letter-spacing: -1.2px;
-}
-
-.board-write-btn {
-    background: #e03e3e;
-    color: #fff;
-    padding: 7px 18px;
-    border-radius: 20px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
-    border: none;
-    transition: background 0.16s;
-    cursor: pointer;
-}
-.board-write-btn:hover {
-    background: #b82b2b;
-}
-
 .board-sort-bar {
     display: flex;
-    justify-content: flex-end;      /* 오른쪽 정렬 */
+    justify-content: flex-end;
     align-items: center;
     gap: 8px;
-    margin: 12px 0 18px 0;          /* 위/아래 여백 조절 */
+    margin: 12px 0 18px 0;
 }
-
 .board-sort-label {
     font-weight: 500;
     margin-right: 6px;
     color: #444;
     font-size: 1.05rem;
 }
-
 .board-sort-select {
     border-radius: 7px;
     padding: 6px 16px;
@@ -211,7 +174,6 @@
     border: 1.5px solid #e03e3e;
     outline: none;
 }
-
 .board-tab-btn.active {
     border: 2px solid #e03e3e;
     background: #fff5f5;
@@ -219,7 +181,7 @@
     font-weight: 700;
 }
 
-/* 좋아요/스크랩 컬럼 스타일 */
+/* 좋아요/스크랩/댓글 뱃지 컬럼 스타일 */
 .like-badge {
     color: #e03e3e;
     font-weight: 600;
@@ -232,15 +194,6 @@
     font-size: 1.07em;
     letter-spacing: -1px;
 }
-.board-table th,
-.board-table td {
-    text-align: center;
-    vertical-align: middle;
-}
-.board-title-cell {
-    text-align: left !important;
-}
-
 .comment-badge {
     color: #0f8fbd;
     font-weight: 600;
@@ -261,15 +214,12 @@
     font-family: 'Noto Sans KR', Arial, sans-serif;
     transition: box-shadow 0.18s;
 }
-
 .board-detail-card h2 {
     font-size: 1.8rem;
     font-weight: 700;
     margin-bottom: 16px;
-    /* color: #e03e3e; */
     letter-spacing: -1.5px;
 }
-
 .board-meta {
     display: flex;
     align-items: center;
@@ -278,7 +228,6 @@
     font-size: 1.13rem;
     margin-bottom: 20px;
 }
-
 .board-content {
     min-height: 200px;
     padding: 40px 0 32px 0;
@@ -290,61 +239,46 @@
     background: #fafafd;
     white-space: pre-line;
 }
-
 .board-detail-loading {
     color: #aaa;
     margin: 60px 0;
     text-align: center;
 }
-
 .board-detail-error {
     color: #e03e3e;
     margin: 60px 0;
     text-align: center;
 }
-
 .board-actions {
     display: flex;
     justify-content: flex-end;
     gap: 13px;
     margin-top: 46px;
 }
-
-.board-write-btn:disabled {
-    background: #eee;
-    color: #aaa;
-    cursor: not-allowed;
-}
-
 .board-edit-btn {
     background: #ececec;
     color: #333;
 }
-
 .board-delete-btn {
     background: #fff0f0;
     color: #e03e3e;
     border: 1.3px solid #ffc9c9;
 }
-
 .board-back-btn {
     background: #e03e3e;
     color: #fff;
 }
-
 .icon {
     margin-right: 7px;
     position: relative;
     top: 2px;
 }
-
 .wine-degree {
     margin-top: 6px;
     color: #90603b;
     font-size: 1.1em;
     font-weight: bold;
 }
-
 .board-attachments {
     margin-top: 22px;
     padding: 16px 0 2px 0;
@@ -352,24 +286,20 @@
     font-size: 1.06rem;
     color: #444;
 }
-
 .attachment-list {
     margin: 0;
     padding-left: 0;
     list-style: none;
 }
-
 .attachment-link {
     color: #2563eb;
     text-decoration: underline;
     margin-right: 16px;
     font-size: 1.08em;
 }
-
 .attachment-link:hover {
     color: #e03e3e;
 }
-
 .board-like-scrap-bar {
     display: flex;
     gap: 14px;
@@ -390,28 +320,23 @@
     border-radius: 8px;
     user-select: none;
 }
-
 .like-btn.on {
     color: #e03e3e;
     font-weight: bold;
     transform: scale(1.07);
 }
-
 .like-btn:hover {
     background: #fff0f0;
     outline: none;
 }
-
 .like-btn:focus {
     background: #fff8f8;
 }
-
 .like-btn span {
     font-size: 1.07rem;
     margin-left: 2px;
     color: #555;
 }
-
 .scrap-btn {
     background: none;
     border: none;
@@ -425,16 +350,11 @@
     padding: 4px 8px;
     user-select: none;
 }
-
 .scrap-btn.on {
     color: #ffe066;
     transform: scale(1.13);
 }
-
-.scrap-btn:hover {
-    background: #fffbe7;
-}
-
+.scrap-btn:hover,
 .scrap-btn:focus {
     background: #fffbe7;
 }
@@ -448,7 +368,6 @@
     box-shadow: 0 6px 32px rgba(224,62,62,0.10);
     border: 2px solid #ececec;
 }
-
 .board-write-form h2 {
     font-size: 2.1rem;
     color: #e03e3e;
@@ -456,7 +375,6 @@
     margin-bottom: 24px;
     letter-spacing: -1.1px;
 }
-
 .board-input {
     width: 100%;
     font-size: 1.1rem;
@@ -471,7 +389,6 @@
     border: 1.5px solid #e03e3e;
     outline: none;
 }
-
 .quill-editor-wrap {
     background: #fafafd;
     border-radius: 8px;
@@ -523,6 +440,7 @@
 
 /* ==== 파일 업로드 ==== */
 .file-dropzone {
+    width: 100%;
     border: 2px dashed #a0aec0;
     background: #f9fafb;
     padding: 18px;
@@ -531,9 +449,7 @@
     margin-bottom: 12px;
     transition: background 0.2s, border-color 0.2s;
 }
-.file-dropzone:hover {
-    background: #f1f5f9;
-}
+.file-dropzone:hover,
 .file-dropzone.drag-active {
     background: #e0edfd;
     border-color: #2563eb;

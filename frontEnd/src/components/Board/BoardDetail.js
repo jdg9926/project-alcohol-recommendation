@@ -135,6 +135,8 @@ export default function BoardDetail() {
             </div>
         );
     }
+
+    console.log("post ::", post);
     
     const hasFiles = post.fileNames && post.fileNames.length > 0;
     const isAuthor = user && user.nickname === post.author; // 본인 확인
@@ -151,8 +153,7 @@ export default function BoardDetail() {
                 <button 
                     className={`like-btn ${liked ? "on" : ""}`} 
                     onClick={handleLike}>
-                        ♥ 
-                    <span>{likeCount}</span>
+                        ♥<span>{likeCount}</span>
                 </button>
                 <button
                     className={`scrap-btn ${scrapped ? "on" : ""}`}
@@ -173,7 +174,7 @@ export default function BoardDetail() {
                     <b>첨부파일:</b>
                     <ul className="attachment-list">
                         {post.fileNames.map((saveName, i) => (
-                            <li key={i}>
+                            <li key={saveName}>
                                 <a
                                     href={`${BASE_URL}:8888/api/board/download/${encodeURIComponent(saveName)}?originName=${encodeURIComponent(post.originFileNames?.[i] || saveName)}`}
                                     download
