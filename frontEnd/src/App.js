@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 
-import MyResumeMain from "./components/MyResume/MyResumeMain.js";
 import MainHeaders from "./components/Header/MainHeader";
 import LoginPage from "./components/Pages/LoginPage.js";
 import SignupPage from "./components/Pages/SignupPage";
@@ -20,9 +19,8 @@ function App() {
         <>
             <MainHeaders />
             <Routes>
-                <Route path="/" element={<MyResumeMain />} />
                 <Route
-                    path="/wine"
+                    path="/"
                     element={
                         result == null ? (
                             <WineRecommendForm onRecommend={setResult} />

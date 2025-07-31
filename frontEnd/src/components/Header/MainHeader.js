@@ -17,12 +17,6 @@ const MainHeader = () => {
             <nav className="header-nav-links" aria-label="메인 네비게이션">
                 <NavLink
                     to="/"
-                    className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}
-                >
-                    포트폴리오
-                </NavLink>
-                <NavLink
-                    to="/wine"
                     className={({ isActive }) =>
                         'nav-link' + (isActive && window.location.pathname === '/' ? ' active' : '')
                     }
