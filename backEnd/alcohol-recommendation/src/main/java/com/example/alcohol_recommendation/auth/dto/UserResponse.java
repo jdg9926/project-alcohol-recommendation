@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserResponse {
 	private long seq;
-	private String UserId;
+	private String userId;
 	private String nickname;
 	private String email;
 	private String password; // 숨길거면 주석
@@ -21,5 +21,9 @@ public class UserResponse {
 	
     public UserResponse(User user) {
         this.seq = user.getSeq();
+        this.userId = user.getUserId();
+        this.nickname = user.getNickname();
+        this.email = user.getEmail();
+        this.createdAt = user.getCreatedAt();
     }
 }

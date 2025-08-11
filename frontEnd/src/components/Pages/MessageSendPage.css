@@ -1,0 +1,93 @@
+.message-send-page {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.message-send-form .form-group {
+    margin-bottom: 15px;
+}
+
+.message-send-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.message-send-form input,
+.message-send-form textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.message-send-form button {
+    padding: 8px 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.message-send-form button:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+.message-send-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.form-actions button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.form-actions button:first-child {
+    background: #ccc;
+}
+
+.form-actions button:last-child {
+    background: #6c5ce7;
+    color: white;
+}
+
+.form-actions button:last-child:disabled {
+    background: #999;
+    cursor: not-allowed;
+}

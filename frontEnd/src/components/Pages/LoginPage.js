@@ -16,6 +16,7 @@ export default function LoginPage() {
     };
 
     const handleSubmit = async e => {
+        console.log("Form submitted:", form); // 디버깅용 로그
         e.preventDefault();
         try {
             const body = await login(form);
@@ -37,6 +38,7 @@ export default function LoginPage() {
                         name="userId"
                         value={form.userId}
                         onChange={handleChange}
+                        autoComplete="username"
                         required
                     />
                 </label>
@@ -47,6 +49,7 @@ export default function LoginPage() {
                         name="password"
                         value={form.password}
                         onChange={handleChange}
+                        autoComplete="current-password"
                         required
                     />
                 </label>

@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,9 +15,18 @@ import com.example.alcohol_recommendation.auth.dto.LoginRequest;
 import com.example.alcohol_recommendation.auth.dto.LoginResponse;
 import com.example.alcohol_recommendation.auth.dto.ResetPasswordDto;
 import com.example.alcohol_recommendation.auth.dto.SignupRequest;
+import com.example.alcohol_recommendation.auth.dto.UserResponse;
 import com.example.alcohol_recommendation.auth.model.User;
 import com.example.alcohol_recommendation.auth.service.AuthService;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -32,8 +42,23 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public LoginResponse login(@RequestBody @Valid LoginRequest req) {
-		return authService.login(req);
+	public LoginResponse login(@RequestBody @Valid LoginRequest req, HttpServletResponse response) {
+	    // 기존 로그인 로직 (Access 토큰 발급 + 유저 정보)
+		System.out.println(req);
+	    LoginResponse loginResponse = authService.login(req);
+
+	    // Refresh 토큰 발급
+	    String refreshToken = authService.generateRefreshToken(
+	            String.valueOf(loginResponse.getUser().getSeq())
+	    );
+
+	    // HttpOnly 쿠키에 저장
+	    Cookie cookie = new Cookie("refresh_token", refreshToken);
+	    cookie.setHttpOnly(true);
+	    cookie.setPath("/api/auth/refresh");
+	    response.addCookie(cookie);
+
+	    return loginResponse;
 	}
 
 	@GetMapping("/me")
@@ -60,5 +85,11 @@ public class AuthController {
 	public Map<String,String> resetPassword(@RequestBody @Valid ResetPasswordDto dto) {
 		authService.resetPassword(dto.getToken(), dto.getNewPassword());
 		return Map.of("message", "Password updated");
+	}
+	
+	@PostMapping("/refresh")
+	public LoginResponse refresh(
+	        @CookieValue(value = "refresh_token", required = false) String refreshToken) {
+	    return authService.refreshAccessToken(refreshToken);
 	}
 }

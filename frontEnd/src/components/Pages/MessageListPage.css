@@ -1,0 +1,114 @@
+.message-list-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.message-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.message-item {
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.message-item:hover {
+    background-color: #f5f5f5;
+}
+
+.message-item.unread {
+    font-weight: bold;
+    background-color: #fffaf0;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #888;
+}
+
+.message-title {
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.message-preview {
+    font-size: 12px;
+    color: #555;
+}
+
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination button {
+    margin: 0 4px;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    background: white;
+    cursor: pointer;
+}
+
+.pagination button.active {
+    background-color: #007bff;
+    color: white;
+}
+.message-list-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.message-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.message-tabs button {
+    padding: 6px 12px;
+    border: none;
+    background: #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.message-tabs button.active {
+    background: #6c5ce7;
+    color: white;
+}
+
+.send-button {
+    margin-left: auto;
+    background: #2ecc71 !important;
+    color: white;
+}
+
+.message-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.message-table th,
+.message-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+.message-table tr.unread {
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+.message-table tr:hover {
+    background-color: #f0f0f0;
+    cursor: pointer;
+}

@@ -1,116 +1,67 @@
-import { BASE_URL } from "./baseUrl";
+import axios from "axios";
+import { api } from "./client";
 
 export async function signup({ userId, nickname, password, email }) {
-    const res = await fetch(`${BASE_URL}:8888/api/auth/signup`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-            userId,
-            nickname,
-            email,
-            password,
-        })
+    return api("/api/auth/signup", {
+        method: "POST",
+        body: { userId, nickname, password, email }
     });
-
-    const data = await res.json(); // 한 번만 읽기
-    
-    if (!res.ok) {
-        // 백엔드가 내려준 에러 메시지를 포함한 ErrorResponse 객체에서 message 꺼내 던지기
-        throw new Error(data.message || `Signup failed: ${res.status}`);
-    }
-    return data;
-}
-
-// 아이디 중복 확인
-export async function checkUserId(userId) {
-  const res = await fetch(`/api/users/check-id?userId=${encodeURIComponent(userId)}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || '아이디 중복 확인 실패');
-  return data; // true / false
-}
-
-// 닉네임 중복 확인
-export async function checkNickname(nickname) {
-  const res = await fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || '닉네임 중복 확인 실패');
-  return data; // true / false
-}
-
-// 이메일 인증번호 전송
-export async function sendVerificationCode(email) {
-    const res = await fetch(`/api/users/send-verification`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || '인증번호 전송 실패');
-    return data.code; // 인증코드 (테스트용), 또는 success 메시지
-}
-
-// 이메일 인증번호 검증
-export async function verifyEmailCode(email, code) {
-    const res = await fetch(`/api/users/verify-code`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || '인증 실패');
-    return data.success; // true / false
 }
 
 export async function login({ userId, password }) {
-    const res = await fetch(`${BASE_URL}:8888/api/auth/login`, {
+    console.log("Logging in with userId:", userId); // 디버깅용 로그
+    return api("/api/auth/login", {
         method: "POST",
-        headers: { 
-            "Content-Type": "application/json" 
-        },
-        body: JSON.stringify({ 
-            userId, 
-            password 
-        })
+        body: { userId, password }
     });
-
-    const body = await res.json();
-    if (!res.ok) {
-        throw new Error(body.message || '로그인 실패');
-    }
-
-    localStorage.setItem('token', body.token);
-    localStorage.setItem('user', JSON.stringify(body.user));
-    
-    return body;  // 토큰과 유저를 함께 반환
 }
 
-export async function getMe() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        throw new Error('로그인 토큰이 없습니다.');
-    }
-
-    
-    const res = await fetch(`${BASE_URL}:8888/api/auth/me`, {
-        method: 'GET',
-        headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-        }
+export async function getMe(token) {
+    return api("/api/auth/me", {
+        method: "GET",
+        token
     });
+}
 
-    const body = await res.json();
-    if (!res.ok) {
-        throw new Error(body.message || `회원 정보 조회 실패: ${res.status}`);
+// 아래와 같은 사용자 관련 API도 모두 동일 패턴으로 통일
+export async function checkUserIdDuplicate(userId) {
+    return api(`/api/users/check-id?userId=${encodeURIComponent(userId)}`);
+}
+export async function checkNicknameDuplicate(nickname) {
+    return api(`/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`);
+}
+export async function sendVerificationCodeApi({ email }) {
+    return api("/api/users/send-verification", {
+        method: "POST",
+        body: { email }
+    });
+}
+export async function verifyEmailCode({ email, code }) {
+    return api("/api/users/verify-code", {
+        method: "POST",
+        body: { email, code }
+    });
+}
+
+export async function refreshToken() {
+    const res = await fetch("/auth/refresh", {
+        method: "POST",
+        credentials: "include", // refreshToken 쿠키 전달
+    });
+    if (!res.ok) throw new Error("Refresh Token 요청 실패");
+    const data = await res.json();
+    return data.accessToken; // 서버에서 새 accessToken 반환한다고 가정
+}
+
+export async function resetPasswordApi({ email, code, newPassword }) {
+    try {
+        const response = await axios.post("/auth/reset-password", {
+            email,
+            code,
+            newPassword
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: "비밀번호 재설정 실패" };
     }
-
-    return body;
 }

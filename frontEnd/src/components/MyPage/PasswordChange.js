@@ -1,109 +1,108 @@
-import { useState, useContext } from "react";
-import { BASE_URL } from "../../api/baseUrl";
-import { AuthContext } from "../../AuthContext";
+// src/components/MyPage/PasswordChange.js
+import { useState } from "react";
+import { resetPasswordApi } from "../../api/auth";
+import PasswordStrengthBar from "../Common/PasswordStrengthBar";
 
 export default function PasswordChange() {
-    const [oldPw, setOldPw] = useState("");
-    const [newPw, setNewPw] = useState("");
-    const [confirmPw, setConfirmPw] = useState("");
-    const [message, setMessage] = useState("");
+    const [form, setForm] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    });
     const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState(null);
+    const [error, setError] = useState(null);
 
-    const { loginToken } = useContext(AuthContext);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
+        setError(null);
+        setMessage(null);
+    };
+
+    const validateForm = () => {
+        if (!form.currentPassword) return "현재 비밀번호를 입력하세요.";
+        if (!form.newPassword) return "새 비밀번호를 입력하세요.";
+        if (form.newPassword.length < 8) return "비밀번호는 8자리 이상이어야 합니다.";
+        if (!/[~!@#$%^&*()_\-+={};':"\\|,.<>/?]/.test(form.newPassword))
+            return "비밀번호에 특수문자를 포함해야 합니다.";
+        if (form.newPassword !== form.confirmPassword)
+            return "새 비밀번호와 확인이 일치하지 않습니다.";
+        return null;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessage("");
-
-        // 입력값 유효성 체크
-        if (!oldPw || !newPw || !confirmPw) {
-            setMessage("모든 항목을 입력해주세요.");
+        const validationError = validateForm();
+        if (validationError) {
+            setError(validationError);
             return;
         }
-        if (newPw.length < 6) {
-            setMessage("새 비밀번호는 6자 이상이어야 합니다.");
-            return;
-        }
-        if (newPw !== confirmPw) {
-            setMessage("새 비밀번호가 일치하지 않습니다.");
-            return;
-        }
-
-        setLoading(true);
 
         try {
-            const response = await fetch(`${BASE_URL}:8888/myPage/myPwChange`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${loginToken}`
-                },
-                body: JSON.stringify({
-                    oldPassword: oldPw,
-                    newPassword: newPw
-                })
+            setLoading(true);
+            await resetPasswordApi({
+                currentPassword: form.currentPassword,
+                newPassword: form.newPassword,
             });
-
-            let data = {};
-            try {
-                data = await response.json();
-            } catch (jsonError) {
-                // 서버가 JSON이 아닌 값을 반환하는 경우 등
-                setMessage("서버에서 올바른 응답을 받지 못했습니다.");
-            }
-
-            if (response.ok) {
-                setMessage("비밀번호가 성공적으로 변경되었습니다!");
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                setMessage(data?.message || "비밀번호 변경 실패");
-            }
-        } catch (error) {
-            setMessage("비밀번호 변경 중 네트워크 오류가 발생했습니다.");
-            console.error("비밀번호 변경 요청 오류:", error);
+            setMessage("비밀번호가 성공적으로 변경되었습니다.");
+            setForm({
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+            });
+        } catch (err) {
+            setError(err?.data?.message || "비밀번호 변경 실패");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <form className="password-change-form" onSubmit={handleSubmit}>
-            <div className="form-row">
-                <label htmlFor="oldPw">현재 비밀번호</label>
-                <input
-                    type="password"
-                    id="oldPw"
-                    className="profile-edit-input"
-                    value={oldPw}
-                    onChange={e => setOldPw(e.target.value)}
-                />
-            </div>
-            <div className="form-row">
-                <label htmlFor="newPw">새 비밀번호</label>
-                <input
-                    type="password"
-                    id="newPw"
-                    className="profile-edit-input"
-                    value={newPw}
-                    onChange={e => setNewPw(e.target.value)}
-                />
-            </div>
-            <div className="form-row">
-                <label htmlFor="confirmPw">새 비밀번호 확인</label>
-                <input
-                    type="password"
-                    id="confirmPw"
-                    className="profile-edit-input"
-                    value={confirmPw}
-                    onChange={e => setConfirmPw(e.target.value)}
-                />
-            </div>
-            <button className="profile-edit-btn" type="submit" disabled={loading}>
-                {loading ? "변경 중..." : "비밀번호 변경"}
-            </button>
-            {message && <div className="profile-edit-message">{message}</div>}
-        </form>
+        <div className="password-change">
+            <h3>비밀번호 변경</h3>
+            <form onSubmit={handleSubmit}>
+                <label>
+                    현재 비밀번호
+                    <input
+                        type="password"
+                        name="currentPassword"
+                        value={form.currentPassword}
+                        onChange={handleChange}
+                        required
+                    />
+                </label>
+
+                <label>
+                    새 비밀번호
+                    <input
+                        type="password"
+                        name="newPassword"
+                        value={form.newPassword}
+                        onChange={handleChange}
+                        required
+                    />
+                </label>
+                <PasswordStrengthBar password={form.newPassword} />
+
+                <label>
+                    새 비밀번호 확인
+                    <input
+                        type="password"
+                        name="confirmPassword"
+                        value={form.confirmPassword}
+                        onChange={handleChange}
+                        required
+                    />
+                </label>
+
+                {error && <p style={{ color: "red" }}>{error}</p>}
+                {message && <p style={{ color: "green" }}>{message}</p>}
+
+                <button type="submit" disabled={loading}>
+                    {loading ? "변경 중..." : "비밀번호 변경"}
+                </button>
+            </form>
+        </div>
     );
 }
