@@ -1,91 +1,107 @@
-import { createContext, useState, useEffect, useMemo, useCallback } from "react";
+// src/AuthContext.js
+import { createContext, useState, useEffect, useCallback, useMemo } from "react";
 import PropTypes from "prop-types";
-import { getMe, refreshToken } from "./api/auth"; // refreshToken API 추가
+import { getMe, refreshToken, logoutApi } from "./api/auth";
+import { getAccessToken, setAccessToken, clearAccessToken } from "./api/token";
 
 export const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [loginToken, setLoginToken] = useState(localStorage.getItem("token"));
-    const [loading, setLoading] = useState(true);
+	const [user, setUser] = useState(null);
+	const [loginToken, setLoginTokenState] = useState(getAccessToken());
+	const [loading, setLoading] = useState(true);
+	const [unreadCount, setUnreadCount] = useState(0);
 
-    const logout = useCallback(() => {
-        localStorage.removeItem("token");
-        setLoginToken(null);
-        setUser(null);
-    }, []);
+	const setLoginToken = useCallback(async (token, userData) => {
+		if (token) {
+			setAccessToken(token);
+			setLoginTokenState(token);
+		}
+		if (userData) {
+			setUser(userData);
+		} else if (token) {
+			try {
+				const me = await getMe();
+				setUser(me);
+			} catch {
+				// ignore
+			}
+		}
+	}, []);
 
-    // JWT 만료 시간 파싱 함수
-    const getTokenExpiry = (token) => {
-        try {
-            const payload = JSON.parse(atob(token.split(".")[1]));
-            return payload.exp * 1000; // ms 변환
-        } catch {
-            return null;
-        }
-    };
+	const logout = useCallback(async () => {
+		try {
+			await logoutApi();
+		} catch {
+			// ignore
+		} finally {
+			clearAccessToken();
+			setLoginTokenState(null);
+			setUser(null);
+		}
+	}, []);
 
-    // 토큰 갱신
-    const tryRefreshToken = useCallback(async () => {
-        try {
-            const newToken = await refreshToken(); // 서버에서 새 Access Token 반환
-            if (newToken) {
-                localStorage.setItem("token", newToken);
-                setLoginToken(newToken);
-            }
-        } catch (e) {
-            console.error("토큰 갱신 실패:", e);
-            logout();
-        }
-    }, [logout]);
+	const tryRefresh = useCallback(async () => {
+		try {
+			const newToken = await refreshToken();
+			if (!newToken) {
+				await logout();
+				return false;
+			}
+			setAccessToken(newToken);
+			setLoginTokenState(newToken);
+			return true;
+		} catch {
+			await logout();
+			return false;
+		}
+	}, [logout]);
 
-    // 앱 시작 시 토큰 확인 및 유저 정보 로드
-    useEffect(() => {
-        (async () => {
-            if (!loginToken) {
-                setLoading(false);
-                return;
-            }
-            try {
-                const expiry = getTokenExpiry(loginToken);
-                if (expiry) {
-                    const now = Date.now();
-                    const timeLeft = expiry - now;
+	useEffect(() => {
+		(async () => {
+			const token = getAccessToken();
+			if (!token) {
+				setLoading(false);
+				return;
+			}
+			try {
+				const me = await getMe();
+				setUser(me);
+			} catch {
+				const ok = await tryRefresh();
+				if (ok) {
+					try {
+						const me2 = await getMe();
+						setUser(me2);
+					} catch {
+						await logout();
+					}
+				} else {
+					await logout();
+				}
+			} finally {
+				setLoading(false);
+			}
+		})();
+	}, [tryRefresh, logout]);
 
-                    // 만료까지 5분 미만이면 토큰 갱신
-                    if (timeLeft < 5 * 60 * 1000) {
-                        await tryRefreshToken();
-                    }
-                }
+	const contextValue = useMemo(() => ({
+		user,
+		setUser,
+		loginToken,
+		setLoginToken,
+		logout,
+		unreadCount,
+		setUnreadCount
+	}), [user, loginToken, unreadCount, setLoginToken, logout]);
 
-                const me = await getMe(localStorage.getItem("token"));
-                setUser(me);
-            } catch (e) {
-                if (e.status === 401) logout();
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, [loginToken, logout, tryRefreshToken]);
+	if (loading) return <div>로딩 중...</div>;
 
-    const contextValue = useMemo(
-        () => ({
-            user,
-            setUser,
-            loginToken,
-            setLoginToken,
-            logout,
-        }),
-        [user, loginToken, logout]
-    );
-
-    if (loading) return <div>로딩 중...</div>;
-
-    return (
-        <AuthContext.Provider value={contextValue}>
-            {children}
-        </AuthContext.Provider>
-    );
+	return (
+		<AuthContext.Provider value={contextValue}>
+			{children}
+		</AuthContext.Provider>
+	);
 }
 
 AuthProvider.propTypes = { children: PropTypes.node.isRequired };

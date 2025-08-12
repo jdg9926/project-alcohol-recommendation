@@ -1,6 +1,7 @@
+// 탭 4칸
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../api/client";
+import { getInbox, getSent } from "../../api/messages";
 import "./MessageListPage.css";
 
 export default function MessageListPage() {
@@ -9,13 +10,20 @@ export default function MessageListPage() {
     const [tab, setTab] = useState("inbox"); // inbox | sent
     const navigate = useNavigate();
 
-    
     useEffect(() => {
         const fetchMessages = async () => {
             setLoading(true);
             try {
-                const data = await api(`/api/messages?box=${tab}`);
-                setMessages(data || []);
+                const data = tab === "inbox" ? await getInbox() : await getSent();
+                // 백엔드 DTO에 맞춰 필드 정규화
+                const normalized = (data || []).map(m => ({
+                    id: m.id,
+                    name: m.otherUser,
+                    title: m.title,
+                    createdAt: m.createdAt,
+                    read: m.readFlag,
+                }));
+                setMessages(normalized);
             } catch (err) {
                 console.error("쪽지 목록 불러오기 실패:", err);
                 alert(err.message || "쪽지 목록을 불러오지 못했습니다.");
@@ -23,7 +31,6 @@ export default function MessageListPage() {
                 setLoading(false);
             }
         };
-
         fetchMessages();
     }, [tab]);
 
@@ -31,26 +38,10 @@ export default function MessageListPage() {
         <div className="message-list-container">
             <h2>쪽지함</h2>
 
-            {/* 탭 버튼 */}
             <div className="message-tabs">
-                <button
-                    className={tab === "inbox" ? "active" : ""}
-                    onClick={() => setTab("inbox")}
-                >
-                    받은 쪽지함
-                </button>
-                <button
-                    className={tab === "sent" ? "active" : ""}
-                    onClick={() => setTab("sent")}
-                >
-                    보낸 쪽지함
-                </button>
-                <button
-                    className="send-button"
-                    onClick={() => navigate("/messages/send")}
-                >
-                    새 쪽지
-                </button>
+                <button className={tab === "inbox" ? "active" : ""} onClick={() => setTab("inbox")}>받은 쪽지함</button>
+                <button className={tab === "sent" ? "active" : ""} onClick={() => setTab("sent")}>보낸 쪽지함</button>
+                <button className="send-button" onClick={() => navigate("/messages/send")}>새 쪽지</button>
             </div>
 
             {loading ? (
@@ -70,13 +61,9 @@ export default function MessageListPage() {
                     </thead>
                     <tbody>
                         {messages.map((msg) => (
-                            <tr
-                                key={msg.id}
-                                className={!msg.read && tab === "inbox" ? "unread" : ""}
-                                onClick={() => navigate(`/messages/${msg.id}`)}
-                            >
+                            <tr key={msg.id} onClick={() => navigate(`/messages/${msg.id}`)} className={!msg.read ? "unread" : ""}>
                                 <td>{msg.id}</td>
-                                <td>{tab === "inbox" ? msg.senderNickname : msg.receiverNickname}</td>
+                                <td>{msg.name}</td>
                                 <td>{msg.title}</td>
                                 <td>{new Date(msg.createdAt).toLocaleString()}</td>
                                 <td>{msg.read ? "O" : "X"}</td>

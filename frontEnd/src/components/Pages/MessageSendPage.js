@@ -1,22 +1,33 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
 import "./MessageSendPage.css";
 
 export default function MessageSendPage() {
     const [searchParams] = useSearchParams();
+    const location = useLocation();
     const navigate = useNavigate();
 
-    const [to, setTo] = useState("");
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
+    // 기본값
+    const [to, setTo] = useState("admin");
+    const [title, setTitle] = useState("테스트");
+    const [content, setContent] = useState("테스트");
     const [loading, setLoading] = useState(false);
 
-    // 답장 모드: 쿼리 파라미터에서 받는 사람 자동 세팅
+    // 답장 모드 or URL 파라미터 → 받는 사람/제목 채우기
     useEffect(() => {
-        const prefillTo = searchParams.get("to");
-        if (prefillTo) setTo(prefillTo);
-    }, [searchParams]);
+        const prefillToFromQuery = searchParams.get("to");
+
+        if (location.state?.receiverUserId) {
+            setTo(location.state.receiverUserId);
+        } else if (prefillToFromQuery) {
+            setTo(prefillToFromQuery);
+        }
+
+        if (location.state?.title) {
+            setTitle(location.state.title);
+        }
+    }, [searchParams, location.state]);
 
     const handleSend = async () => {
         if (!to.trim() || !title.trim() || !content.trim()) {
@@ -24,11 +35,17 @@ export default function MessageSendPage() {
             return;
         }
 
+        const body = {
+            receiverUserId: to.trim(),
+            title: title.trim(),
+            content: content.trim(),
+        };
+
         setLoading(true);
         try {
             await api("/api/messages/send", {
                 method: "POST",
-                body: { to, title, content }
+                body
             });
             alert("쪽지를 보냈습니다.");
             navigate("/messages");

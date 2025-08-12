@@ -1,5 +1,6 @@
 // src/components/MyPage/MyPage.js
-import { useContext, useState, useMemo } from "react";
+import { useContext, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AuthContext } from "../../AuthContext";
 import MyPostsList from "./MyPostsList";
 import MyCommentsList from "./MyCommentsList";
@@ -7,68 +8,67 @@ import MyScrapList from "./MyScrapList";
 import MyLikeList from "./MyLikeList";
 import ProfileEdit from "./ProfileEdit";
 import PasswordChange from "./PasswordChange";
-import ProfileImageUploader from "./ProfileImageUploader";
 import DeleteAccount from "./DeleteAccount";
-import MessageInbox from "./MessageInbox";
-import MessageSent from "./MessageSent";
-import MessageCompose from "./MessageCompose";
 import "./MyPage.css";
 
 export default function MyPage() {
-    const { user, setUser } = useContext(AuthContext);
-    const [tab, setTab] = useState("posts");
+	const { user } = useContext(AuthContext);
+	const [params, setParams] = useSearchParams();
+	const tab = params.get("tab") || "posts";
 
-    const tabs = useMemo(
-        () => [
-        { key: "posts", label: "내 글", component: <MyPostsList user={user} /> },
-        { key: "comments", label: "내 댓글", component: <MyCommentsList user={user} /> },
-        { key: "scrap", label: "스크랩", component: <MyScrapList user={user} /> },
-        { key: "like", label: "좋아요", component: <MyLikeList user={user} /> },
-        { key: "messages-inbox", label: "받은 쪽지", component: <MessageInbox /> },
-        { key: "messages-sent", label: "보낸 쪽지", component: <MessageSent /> },
-        { key: "message-compose", label: "쪽지 보내기", component: <MessageCompose /> },
-        { key: "profile", label: "회원정보 수정", component: <ProfileEdit user={user} /> },
-        { key: "password", label: "비밀번호 변경", component: <PasswordChange /> },
-        { key: "deleteAccount", label: "회원 탈퇴", component: <DeleteAccount /> },
-        ],
-        [user]
-    );
+	const switchTab = useCallback((key) => {
+		const next = new URLSearchParams(params);
+		next.set("tab", key);
+		setParams(next, { replace: true });
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}, [params, setParams]);
 
-    if (!user) return <div>로그인이 필요합니다.</div>; // ✅ Hook 이후에 배치
+	const tabs = useMemo(
+		() => [
+			{ key: "posts", label: "내 글", component: <MyPostsList user={user} /> },
+			{ key: "comments", label: "내 댓글", component: <MyCommentsList user={user} /> },
+			{ key: "scrap", label: "스크랩", component: <MyScrapList user={user} /> },
+			{ key: "like", label: "좋아요", component: <MyLikeList user={user} /> },
+			{ key: "profile", label: "회원정보 수정", component: <ProfileEdit user={user} /> },
+			{ key: "password", label: "비밀번호 변경", component: <PasswordChange /> },
+			{ key: "deleteAccount", label: "회원 탈퇴", component: <DeleteAccount /> }
+		],
+		[user]
+	);
 
-    const activeTab = tabs.find((t) => t.key === tab);
+	if (!user) return <div className="mypage-wrap">로그인이 필요합니다.</div>;
 
-    return (
-        <div className="mypage-wrap">
-            {/* 프로필 영역 */}
-            <div className="mypage-profile">
-                <h2>마이페이지</h2>
-                <ProfileImageUploader
-                    currentImage={user?.profileImage || "/default-avatar.png"}
-                    onUpload={(newUrl) => setUser({ ...user, profileImage: newUrl })}
-                />
-                <div>닉네임: {user.nickname}</div>
-                <div>이메일: {user.email}</div>
-                <div>가입일: {user.createdAt?.slice(0, 10)}</div>
-            </div>
+	const activeTab = tabs.find((t) => t.key === tab) ?? tabs[0];
 
-            {/* 탭 버튼 */}
-            <div className="mypage-tabs">
-                {tabs.map(({ key, label }) => (
-                    <button
-                        key={key}
-                        onClick={() => setTab(key)}
-                        className={tab === key ? "active" : ""}
-                    >
-                        {label}
-                    </button>
-                ))}
-            </div>
+	return (
+		<div className="mypage-wrap">
+			{/* 프로필 영역 (이미지 제거) */}
+			<div className="mypage-profile">
+				<h2>마이페이지</h2>
+				<div>닉네임: {user.nickname}</div>
+				<div>이메일: {user.email}</div>
+				<div>가입일: {user.createdAt?.slice(0, 10)}</div>
+			</div>
 
-            {/* 탭 내용 */}
-            <div className="mypage-content">
-                {activeTab?.component || <div>잘못된 탭입니다.</div>}
-            </div>
-        </div>
-    );
+			{/* 탭 버튼 */}
+			<div className="mypage-tabs" role="tablist" aria-label="마이페이지 탭">
+				{tabs.map(({ key, label }) => (
+					<button
+						key={key}
+						onClick={() => switchTab(key)}
+						className={tab === key ? "active" : ""}
+						role="tab"
+						aria-selected={tab === key}
+					>
+						{label}
+					</button>
+				))}
+			</div>
+
+			{/* 탭 내용 */}
+			<div className="mypage-content">
+				{activeTab.component}
+			</div>
+		</div>
+	);
 }

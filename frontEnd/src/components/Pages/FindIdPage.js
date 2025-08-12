@@ -14,7 +14,7 @@ export default function FindIdPage() {
         setError(''); 
         setResult(null);
         try {
-            const res = await fetch(`${BASE_URL}:8888/api/auth/find-userId`, {
+            const res = await fetch(`${BASE_URL}/api/auth/find-userId`, {
                 method: 'POST',
                 headers: {
                     'Content-Type':'application/json'

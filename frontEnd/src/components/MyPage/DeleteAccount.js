@@ -1,8 +1,8 @@
-// src/components/MyPage/DeleteAccount.js
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 import { clearAccessToken } from "../../api/token";
+import "./DeleteAccount.css";
 
 export default function DeleteAccount() {
     const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export default function DeleteAccount() {
     };
 
     return (
-        <div>
+        <div className="delete-account-container">
             <h3>회원 탈퇴</h3>
             <p>탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.</p>
             <button onClick={handleDelete} disabled={loading}>

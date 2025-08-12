@@ -34,7 +34,10 @@ public class User {
 	  
 	@Column(nullable = false) 
 	private String passwordHash;
-	  
+
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+	
 	@Builder.Default
 	private LocalDateTime createdAt = LocalDateTime.now();
 }

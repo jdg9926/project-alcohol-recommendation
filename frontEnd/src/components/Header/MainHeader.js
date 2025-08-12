@@ -1,14 +1,13 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { FaEnvelope, FaPaperPlane } from "react-icons/fa";
 import { api } from "../../api/client";
 import { AuthContext } from "../../AuthContext";
 import "./MainHeader.css";
 
 export default function MainHeader() {
-    const { user, logout } = useContext(AuthContext);
+    const { user, logout, unreadCount, setUnreadCount } = useContext(AuthContext);
     const navigate = useNavigate();
-    const [unreadCount, setUnreadCount] = useState(0);
 
     // 미읽음 쪽지 카운트 가져오기 (30초마다 갱신)
     useEffect(() => {
@@ -29,7 +28,7 @@ export default function MainHeader() {
         fetchUnreadCount();
         const timer = setInterval(fetchUnreadCount, 30000);
         return () => clearInterval(timer);
-    }, [user]);
+    }, [user, setUnreadCount]);
 
     const handleLogout = async () => {
         await logout();

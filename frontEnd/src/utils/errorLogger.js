@@ -27,7 +27,7 @@ export async function logErrorToBoard({ BASE_URL, title, errorDetail, originTitl
 
     try {
         // 👉 최대 2번까지만 시도(무한루프 방지, 2차 등록에도 실패하면 그 뒤는 로그만)
-        await fetch(`${BASE_URL}:8888/api/board/errLog`, {
+        await fetch(`${BASE_URL}/api/board/errLog`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

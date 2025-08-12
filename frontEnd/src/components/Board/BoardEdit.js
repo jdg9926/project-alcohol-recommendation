@@ -100,7 +100,7 @@ export default function BoardEdit() {
 
     // 기존 내용+첨부파일 불러오기
     useEffect(() => {
-        fetch(`${BASE_URL}:8888/api/board/${id}`)
+        fetch(`${BASE_URL}/api/board/${id}`)
             .then(res => res.json())
             .then(data => {
                 setForm({ title: data.title, content: data.content });
@@ -137,7 +137,7 @@ export default function BoardEdit() {
 
         try {
             const token = localStorage.getItem("token"); // 꼭 토큰 불러오기
-            const res = await fetch(`${BASE_URL}:8888/api/board/${id}`, {
+            const res = await fetch(`${BASE_URL}/api/board/${id}`, {
                 method: "PUT",
                 headers: token
                     ? { Authorization: `Bearer ${token}` }
