@@ -1,68 +1,64 @@
-from fastapi import FastAPI
+import uvicorn
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from wine_genai import recommend_wine_by_conditions
-import requests
+from typing import Any, Dict
 
-app = FastAPI()
+from config import get_port, get_board_api_base
+from ai_client import generate_text
+from wine_genai import build_wine_prompt
 
+# FastAPI 앱
+app = FastAPI(title="Alcohol Recommendation AI API", version="1.0.0")
+
+# CORS (프론트 React에서 호출)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://43.200.182.46:3000",
-        "http://43.200.182.46:8888",
-        "http://project-alcohol-recommendation.s3-website.ap-northeast-2.amazonaws.com"
-    ],
+    allow_origins=["*"],      # 필요 시 도메인 제한
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class WineRequest(BaseModel):
-    taste: str = "풍부하고 진한"
-    smell: str = "과일 향이 풍부한"
-    finish: str = "긴 편"
-    alcohol_content: str = "13%"
-    body: str = "중간"
-    tannin: str = "중간"
-    sweetness: str = "약간 달콤한"
-    sourness: str = "적당히 시큼한"
-    price: str = "상관없음"
 
-def post_to_board(title, content, author="AI"):
-    print("게시판 등록 시작")   # <-- 이거 추가!
-    API_URL = "http://43.200.182.46:8888/api/board/write"
-    files = {
-        "title": (None, title),
-        "content": (None, content),
-        "author": (None, author),
-        "boardType": (None, "AI")
+class RecommendRequest(BaseModel):
+    # 프론트에서 넘어오는 폼 형태를 그대로 받음 (유연성 위해 Any)
+    data: Dict[str, Any]
+
+
+class RecommendResponse(BaseModel):
+    ok: bool
+    result: str
+    error: str | None = None
+
+
+@app.get("/health")
+def health() -> Dict[str, Any]:
+    return {
+        "ok": True,
+        "service": "ai",
+        "board_api_base": get_board_api_base()
     }
-    try:
-        response = requests.post(API_URL, files=files, timeout=5)
-        print("Content-Type:", response.request.headers.get('Content-Type'))
-        if response.ok:
-            print("게시판 등록 성공!")
-        else:
-            print("게시판 등록 실패:", response.status_code, response.text)
-    except Exception as e:
-        print("게시판 등록 예외:", e)
 
-def extract_wine_name(recommendation_text):
-    for line in recommendation_text.splitlines():
-        if "와인 이름:" in line:
-            wine_name = line.split("와인 이름:")[1].strip()
-            return wine_name
-    return "추천 와인"
 
-@app.post("/recommend")
-async def recommend(data: WineRequest):
-    conditions = data.model_dump()
-    recommendation = recommend_wine_by_conditions(conditions)
-    wine_name = extract_wine_name(recommendation)
-    title = f"AI 와인 추천: {wine_name}"
-    content = recommendation
+@app.post("/recommend", response_model=RecommendResponse)
+def recommend(req: RecommendRequest) -> RecommendResponse:
+    """
+    프론트: POST http://localhost:8000/recommend
+    body: { "data": { ...유저 입력... } }
+    """
+    prompt = build_wine_prompt(req.data)
+    gen = generate_text(prompt, temperature=0.3, max_tokens=512)
+    if not gen["ok"]:
+        raise HTTPException(status_code=422, detail=gen["error"] or "AI 호출 실패")
 
-    post_to_board(title, content)
-    return {"recommendation": recommendation}
+    # 필요하면 여기서 Spring Boot로 결과 전달 로직 추가 가능
+    # board_api_base = get_board_api_base()
+    # requests.post(f"{board_api_base}/api/board/...", json=payload)
+
+    return RecommendResponse(ok=True, result=gen["text"], error=None)
+
+
+if __name__ == "__main__":
+    port = get_port(8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

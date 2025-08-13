@@ -20,6 +20,8 @@ import com.example.alcohol_recommendation.auth.model.User;
 import com.example.alcohol_recommendation.auth.repository.PasswordResetTokenRepository;
 import com.example.alcohol_recommendation.auth.repository.UserRepository;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -35,6 +37,48 @@ public class AuthService {
 
 	@Value("${jwt.secret}") private String jwtSecret;
 	@Value("${jwt.expiration}") private long jwtExpiration;
+	@Value("${jwt.refreshExpiration}") private long jwtRefreshExpiration;
+	
+	// Refresh 토큰 발급
+	public String generateRefreshToken(String userSeq) {
+	    byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+	    return Jwts.builder()
+	            .setSubject(userSeq)
+	            .setIssuedAt(new Date())
+	            .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpiration))
+	            .signWith(Keys.hmacShaKeyFor(keyBytes), SignatureAlgorithm.HS512)
+	            .compact();
+	}
+	
+	public LoginResponse refreshAccessToken(String refreshToken) {
+	    if (refreshToken == null) {
+	        throw new RuntimeException("Refresh 토큰이 없습니다.");
+	    }
+
+	    try {
+	        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+	        Claims claims = Jwts.parserBuilder()
+	                .setSigningKey(Keys.hmacShaKeyFor(keyBytes))
+	                .build()
+	                .parseClaimsJws(refreshToken)
+	                .getBody();
+
+	        String userSeq = claims.getSubject();
+	        User user = getMe(userSeq); // 기존 메서드 재사용
+
+	        // 새 Access 토큰 발급
+	        String newAccessToken = Jwts.builder()
+	                .setSubject(userSeq)
+	                .setIssuedAt(new Date())
+	                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
+	                .signWith(Keys.hmacShaKeyFor(keyBytes), SignatureAlgorithm.HS512)
+	                .compact();
+
+	        return new LoginResponse(newAccessToken, new UserResponse(user));
+	    } catch (JwtException e) {
+	        throw new RuntimeException("유효하지 않거나 만료된 Refresh 토큰입니다.");
+	    }
+	}
 
 	public AuthService(UserRepository userRepo, JavaMailSender mailSender, PasswordResetTokenRepository tokenRepo){
 		this.userRepo=userRepo; 

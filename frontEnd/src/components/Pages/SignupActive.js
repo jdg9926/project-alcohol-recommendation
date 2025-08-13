@@ -18,7 +18,7 @@ export const checkUserIdDuplicate = async (userId, setIsUserIdChecked) => {
     }
 
     try {
-        const res = await fetch(`${BASE_URL}:8888/api/users/check-id?userId=${userId}`);
+        const res = await fetch(`${BASE_URL}/api/users/check-id?userId=${userId}`);
         if (!res.ok) {
             alert("서버 오류가 발생했습니다.");
             return;
@@ -61,7 +61,7 @@ export const checkNicknameDuplicate = async (nickname, setIsNicknameChecked) => 
     }
 
     try {
-        const res = await fetch(`${BASE_URL}:8888/api/users/check-nickname?nickname=${nickname}`);
+        const res = await fetch(`${BASE_URL}/api/users/check-nickname?nickname=${nickname}`);
         const exists = await res.json();
         alert(exists ? '이미 사용 중인 닉네임입니다.' : '사용 가능한 닉네임입니다!');
 
@@ -77,7 +77,7 @@ export const verifyEmailCode = async (form, setIsEmailVerified) => {
     const email = getEmail(form);
 
     try {
-        const res = await fetch(`${BASE_URL}:8888/api/users/verify-code`, {
+        const res = await fetch(`${BASE_URL}/api/users/verify-code`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -111,7 +111,7 @@ export const getEmail = (form) => {
 
 // ✅ 이메일 인증번호 전송 API
 export const sendVerificationCodeApi = async (email) => {
-    const res = await fetch(`${BASE_URL}:8888/api/users/send-verification`, {
+    const res = await fetch(`${BASE_URL}/api/users/send-verification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

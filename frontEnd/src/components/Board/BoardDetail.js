@@ -42,7 +42,7 @@ export default function BoardDetail() {
         (async () => {
             try {
                 const token = localStorage.getItem("token");
-                const res = await fetch(`${BASE_URL}:8888/api/board/${id}`, {
+                const res = await fetch(`${BASE_URL}/api/board/${id}`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
                 if (!res.ok) throw new Error("게시글을 불러올 수 없습니다.");
@@ -63,7 +63,7 @@ export default function BoardDetail() {
     const handleDelete = requireLogin(async () => {
         if (!window.confirm("정말 삭제하시겠습니까?")) return;
         try {
-            const res = await fetch(`${BASE_URL}:8888/api/board/${id}`, {
+            const res = await fetch(`${BASE_URL}/api/board/${id}`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -78,7 +78,7 @@ export default function BoardDetail() {
     });
 
     const handleLike = requireLogin(async () => {
-        const res = await fetch(`${BASE_URL}:8888/api/board/${id}/like`, {
+        const res = await fetch(`${BASE_URL}/api/board/${id}/like`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -99,7 +99,7 @@ export default function BoardDetail() {
             if (!confirmCancel) return; // 사용자가 취소 선택 시 아무것도 안함
         }
 
-        const res = await fetch(`${BASE_URL}:8888/api/board/${id}/scrap`, {
+        const res = await fetch(`${BASE_URL}/api/board/${id}/scrap`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -176,7 +176,7 @@ export default function BoardDetail() {
                         {post.fileNames.map((saveName, i) => (
                             <li key={saveName}>
                                 <a
-                                    href={`${BASE_URL}:8888/api/board/download/${encodeURIComponent(saveName)}?originName=${encodeURIComponent(post.originFileNames?.[i] || saveName)}`}
+                                    href={`${BASE_URL}/api/board/download/${encodeURIComponent(saveName)}?originName=${encodeURIComponent(post.originFileNames?.[i] || saveName)}`}
                                     download
                                     className="attachment-link"
                                 >

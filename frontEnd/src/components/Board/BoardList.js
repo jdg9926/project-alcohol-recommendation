@@ -60,7 +60,7 @@ export default function BoardList() {
         setLoading(true);
         setError(null);
 
-        let url = `${BASE_URL}:8888/api/board/list?page=${page}&size=${size}&sort=createdAt,${sortOrder}`;
+        let url = `${BASE_URL}/api/board/list?page=${page}&size=${size}&sort=createdAt,${sortOrder}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
         if (boardType && boardType !== 'ALL') url += `&boardType=${boardType}`;
         else url += `&boardType=ALL`;

@@ -47,7 +47,7 @@ export default function CommentSection({ boardId }) {
     // 댓글 목록 가져오기
     const fetchComments = useCallback(() => {
         setLoading(true);
-        fetch(`${BASE_URL}:8888/api/board/${boardId}/comments`)
+        fetch(`${BASE_URL}/api/board/${boardId}/comments`)
             .then(res => res.ok ? res.json() : Promise.reject())
             .then(setComments)
             .catch(() => setComments([]))
@@ -65,7 +65,7 @@ export default function CommentSection({ boardId }) {
         }
         if (!input?.trim()) return;
 
-        const res = await fetch(`${BASE_URL}:8888/api/board/${boardId}/comments`, {
+        const res = await fetch(`${BASE_URL}/api/board/${boardId}/comments`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -91,7 +91,7 @@ export default function CommentSection({ boardId }) {
             return;
         }
         if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
-        const res = await fetch(`${BASE_URL}:8888/api/board/${boardId}/comments/${commentId}`, {
+        const res = await fetch(`${BASE_URL}/api/board/${boardId}/comments/${commentId}`, {
             method: "DELETE",
             headers: {
                 "Authorization": loginToken ? `Bearer ${loginToken}` : undefined
