@@ -1,8 +1,8 @@
-name: Deploy Spring Boot to EC2
+name: Deploy Spring Boot Backend to EC2
 
 on:
   push:
-    branches: [ master ]   # main이면 main으로
+    branches: [ master ] # 브랜치 맞게 수정
 
 jobs:
   build-and-deploy:
@@ -19,7 +19,6 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      # 백엔드 서브프로젝트만 빌드
       - name: Grant execute permission for Gradlew
         working-directory: backEnd/alcohol-recommendation
         run: chmod +x ./gradlew
@@ -35,7 +34,7 @@ jobs:
           echo "jar=$FILE" >> $GITHUB_OUTPUT
           echo "Found: $FILE"
 
-      - name: Prepare server directory (create if not exists)
+      - name: Prepare server directory
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -52,7 +51,6 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: ${{ steps.jar.outputs.jar }}
           target: /home/ubuntu/apps/myproject-backend/app.jar
-          strip_components: 0
 
       - name: Restart backend service
         uses: appleboy/ssh-action@v1.2.0
