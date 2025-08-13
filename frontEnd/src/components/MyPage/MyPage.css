@@ -1,170 +1,342 @@
 .mypage-wrap {
-    margin: 40px auto 60px auto;
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(224, 62, 62, 0.07), 0 2px 8px rgba(0,0,0,0.06);
-    padding: 40px 34px 36px 34px;
-    min-height: 580px;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
+	margin: 40px auto 60px auto;
+	background: #fff;
+	border-radius: 16px;
+	box-shadow: 0 4px 24px rgba(224, 62, 62, 0.07), 0 2px 8px rgba(0,0,0,0.06);
+	padding: 40px 34px 36px 34px;
+	min-height: 580px;
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
 }
 
 .mypage-profile {
-    border-bottom: 1px solid #ececec;
-    padding-bottom: 18px;
-    margin-bottom: 0px;
+	border-bottom: 1px solid #ececec;
+	padding-bottom: 18px;
+	margin-bottom: 0px;
 }
 
 .mypage-profile h2 {
-    margin-bottom: 13px;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #e03e3e;
-    letter-spacing: -1px;
+	margin-bottom: 13px;
+	font-size: 1.6rem;
+	font-weight: 700;
+	color: #e03e3e;
+	letter-spacing: -1px;
 }
 
 .mypage-profile div {
-    font-size: 1.05rem;
-    margin-bottom: 5px;
-    color: #222;
+	font-size: 1.05rem;
+	margin-bottom: 5px;
+	color: #222;
 }
 
+/* 탭: 레이아웃 + 상단 고정(스크롤 유지) */
 .mypage-tabs {
-    display: flex;
-    gap: 11px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
+	display: flex;
+	gap: 11px;
+	margin-bottom: 8px;
+	flex-wrap: wrap;
+	position: sticky;
+	top: 0;
+	z-index: 5;
+	background: rgba(255,255,255,.92);
+	backdrop-filter: saturate(130%) blur(6px);
+	border-radius: 12px;
+	padding: 8px 6px;
 }
 
 .mypage-tabs button {
-    background: #f8fafc;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 18px;
-    color: #333;
-    font-size: 1rem;
-    font-weight: 500;
-    padding: 8px 20px;
-    transition: background 0.19s, color 0.19s, border 0.18s;
-    cursor: pointer;
-    outline: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+	background: #f8fafc;
+	border: 1.5px solid #e0e0e0;
+	border-radius: 18px;
+	color: #333;
+	font-size: 1rem;
+	font-weight: 500;
+	padding: 8px 20px;
+	transition: background 0.19s, color 0.19s, border 0.18s;
+	cursor: pointer;
+	outline: none;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.03);
 }
 
 .mypage-tabs button.active {
-    background: #ffe5e5;
-    color: #e03e3e;
-    border: 1.5px solid #e03e3e;
-    font-weight: 700;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(224, 62, 62, 0.09);
+	background: #ffe5e5;
+	color: #e03e3e;
+	border: 1.5px solid #e03e3e;
+	font-weight: 700;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 14px rgba(224, 62, 62, 0.09);
+}
+
+/* 키보드 접근성 개선 */
+.mypage-tabs button:focus {
+	border-color: #e03e3e;
+	outline: 2px solid #ffc9c9;
+}
+.mypage-tabs button:focus-visible {
+	outline: 3px solid #ffc9c9;
+	outline-offset: 2px;
 }
 
 .mypage-content {
-    background: #f9f9fb;
-    border-radius: 11px;
-    min-height: 310px;
-    padding: 25px 24px 20px 24px;
-    box-shadow: 0 1.5px 7px rgba(0,0,0,0.02);
-    font-size: 1.05rem;
-    color: #252525;
+	background: #f9f9fb;
+	border-radius: 11px;
+	min-height: 310px;
+	padding: 25px 24px 20px 24px;
+	box-shadow: 0 1.5px 7px rgba(0,0,0,0.02);
+	font-size: 1.05rem;
+	color: #252525;
 }
 
-@media (max-width: 780px) {
-    .mypage-wrap {
-        padding: 30px 9vw 28px 9vw;
-        min-height: 400px;
-    }
-    .mypage-content {
-        padding: 18px 7px 16px 7px;
-        min-height: 170px;
-    }
-}
-
-@media (max-width: 450px) {
-    .mypage-wrap {
-        padding: 20px 2vw 16px 2vw;
-    }
-    .mypage-profile h2 {
-        font-size: 1.2rem;
-    }
-    .mypage-tabs button {
-        padding: 7px 10px;
-        font-size: 0.93rem;
-    }
-}
-
-.mypage-tabs button:focus {
-    border-color: #e03e3e;
-    outline: 2px solid #ffc9c9;
-}
-
+/* 프로필 수정 폼 */
 .profile-edit-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    max-width: 350px;
-    margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	max-width: 350px;
+	margin: 0 auto;
 }
 
 .form-row {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
 }
 
 .profile-edit-input {
-    padding: 8px 12px;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 7px;
-    font-size: 1.07rem;
-    background: #fffdfa;
-    transition: border 0.18s;
+	padding: 8px 12px;
+	border: 1.5px solid #e0e0e0;
+	border-radius: 7px;
+	font-size: 1.07rem;
+	background: #fffdfa;
+	transition: border 0.18s;
 }
 .profile-edit-input:focus {
-    border: 1.5px solid #e03e3e;
-    outline: 2px solid #ffd5d5;
+	border: 1.5px solid #e03e3e;
+	outline: 2px solid #ffd5d5;
 }
 
 .profile-edit-btn {
-    background: #e03e3e;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.07rem;
-    font-weight: 700;
-    padding: 10px 0;
-    margin-top: 6px;
-    box-shadow: 0 2px 8px rgba(224, 62, 62, 0.05);
-    cursor: pointer;
-    transition: background 0.16s, box-shadow 0.16s;
+	background: #e03e3e;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	font-size: 1.07rem;
+	font-weight: 700;
+	padding: 10px 0;
+	margin-top: 6px;
+	box-shadow: 0 2px 8px rgba(224, 62, 62, 0.05);
+	cursor: pointer;
+	transition: background 0.16s, box-shadow 0.16s;
 }
 .profile-edit-btn:hover {
-    background: #c73131;
-    box-shadow: 0 4px 14px rgba(224, 62, 62, 0.14);
+	background: #c73131;
+	box-shadow: 0 4px 14px rgba(224, 62, 62, 0.14);
 }
 
 .profile-edit-message {
-    margin-top: 8px;
-    font-size: 1rem;
-    color: #e03e3e;
-    background: #fff2f2;
-    border-radius: 5px;
-    padding: 7px 10px;
-    border: 1px solid #ffe5e5;
+	margin-top: 8px;
+	font-size: 1rem;
+	color: #e03e3e;
+	background: #fff2f2;
+	border-radius: 5px;
+	padding: 7px 10px;
+	border: 1px solid #ffe5e5;
+}
+
+/* 행 버튼형 리스트 (공통) */
+.list-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	padding: 10px 12px;
+	margin-bottom: 8px;
+	border: 1.5px solid #e8e8e8;
+	border-radius: 10px;
+	background: #fff;
+	cursor: pointer;
+	transition: border .15s, transform .08s, box-shadow .15s;
+}
+.list-row:hover {
+	border-color: #e03e3e;
+	box-shadow: 0 4px 14px rgba(224, 62, 62, 0.08);
+	transform: translateY(-1px);
+}
+.list-title {
+	font-weight: 700;
+	color: #222;
+}
+.list-meta {
+	color: #888;
+	font-size: .95rem;
 }
 
 /* 반응형 */
+@media (max-width: 780px) {
+	.mypage-wrap {
+		padding: 30px 9vw 28px 9vw;
+		min-height: 400px;
+	}
+	.mypage-content {
+		padding: 18px 7px 16px 7px;
+		min-height: 170px;
+	}
+}
 @media (max-width: 450px) {
-    .profile-edit-form {
-        max-width: 100%;
-    }
-    .profile-edit-input {
-        font-size: 0.96rem;
-        padding: 7px 8px;
-    }
-    .profile-edit-btn {
-        font-size: 0.97rem;
-        padding: 8px 0;
-    }
+	.mypage-wrap {
+		padding: 20px 2vw 16px 2vw;
+	}
+	.mypage-profile h2 {
+		font-size: 1.2rem;
+	}
+	.mypage-tabs button {
+		padding: 7px 10px;
+		font-size: 0.93rem;
+	}
+	.profile-edit-form {
+		max-width: 100%;
+	}
+	.profile-edit-input {
+		font-size: 0.96rem;
+		padding: 7px 8px;
+	}
+	.profile-edit-btn {
+		font-size: 0.97rem;
+		padding: 8px 0;
+	}
+}
+
+/* =========================
+   PasswordChange (마이페이지 톤 유지)
+========================= */
+.mypage-card {
+	background: #fff;
+	border: 1.5px solid #f0f0f0;
+	border-radius: 12px;
+	padding: 22px 20px;
+	box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+.mypage-card h3 {
+	margin: 0 0 14px 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: #e03e3e;
+	letter-spacing: -0.2px;
+}
+
+.form-vertical {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	max-width: 420px;
+}
+
+.input-with-btn {
+	display: flex;
+	gap: 8px;
+	align-items: stretch;
+}
+
+.input-with-btn input[type="password"],
+.input-with-btn input[type="text"] {
+	flex: 1;
+	padding: 10px 12px;
+	border: 1.5px solid #e0e0e0;
+	border-radius: 8px;
+	font-size: 1rem;
+	background: #fffdfa;
+	transition: border .18s, box-shadow .18s;
+}
+.input-with-btn input:focus {
+	border-color: #e03e3e;
+	outline: 2px solid #ffd5d5;
+	box-shadow: 0 2px 10px rgba(224, 62, 62, 0.06);
+}
+
+.btn.ghost {
+	padding: 0 12px;
+	border: 1.5px solid #e0e0e0;
+	background: #f8fafc;
+	color: #444;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: .95rem;
+	cursor: pointer;
+	transition: background .16s, border .16s, box-shadow .16s;
+	white-space: nowrap;
+}
+.btn.ghost:hover {
+	background: #eef3f7;
+	border-color: #d6d6d6;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* 제출 버튼(기존 스타일과 조화) */
+.mypage-card button[type="submit"] {
+	background: #e03e3e;
+	color: #fff;
+	border: none;
+	border-radius: 9px;
+	font-size: 1.05rem;
+	font-weight: 700;
+	padding: 11px 0;
+	margin-top: 6px;
+	box-shadow: 0 2px 8px rgba(224, 62, 62, 0.08);
+	cursor: pointer;
+	transition: background .16s, box-shadow .16s, transform .06s;
+}
+.mypage-card button[type="submit"]:hover {
+	background: #c73131;
+	box-shadow: 0 4px 14px rgba(224, 62, 62, 0.16);
+	transform: translateY(-1px);
+}
+.mypage-card button[disabled] {
+	opacity: .7;
+	cursor: not-allowed;
+}
+
+.form-error {
+	margin-top: 2px;
+	color: #e03e3e;
+	background: #fff2f2;
+	border: 1px solid #ffe5e5;
+	border-radius: 8px;
+	padding: 8px 10px;
+	font-size: .95rem;
+}
+.form-success {
+	margin-top: 2px;
+	color: #1a7f37;
+	background: #ecfdf3;
+	border: 1px solid #d1fadf;
+	border-radius: 8px;
+	padding: 8px 10px;
+	font-size: .95rem;
+}
+
+/* 패스워드 강도바 여백 정리 */
+.password-strength {
+	margin: -6px 0 2px 0;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 450px) {
+	.form-vertical { max-width: 100%; }
+	.input-with-btn { gap: 6px; }
+	.btn.ghost { padding: 0 10px; font-size: .92rem; }
+}
+
+/* 접근성용 시각적 숨김 (display:none; 사용 금지) */
+.visually-hidden {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
 }

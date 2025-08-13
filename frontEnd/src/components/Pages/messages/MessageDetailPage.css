@@ -1,0 +1,116 @@
+/* 컨테이너 */
+.message-detail-container {
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 24px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    font-family: "Noto Sans KR", sans-serif;
+}
+
+/* 제목 */
+.message-detail-container h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3436;
+    margin-bottom: 20px;
+}
+
+/* 정보 박스 */
+.message-detail-info {
+    background: #f9fafb;
+    padding: 14px 18px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.message-detail-info p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+    color: #4b5563;
+}
+
+.message-detail-info strong {
+    color: #111827;
+}
+
+/* 내용 */
+.message-content {
+    border: 1px solid #e5e7eb;
+    padding: 16px;
+    border-radius: 8px;
+    min-height: 120px;
+    white-space: pre-wrap;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #374151;
+    background: #fff;
+    margin-bottom: 20px;
+}
+
+/* 버튼 영역 */
+.message-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.message-buttons button {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+/* 기본 버튼 스타일 */
+.message-buttons button:nth-child(1) {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.message-buttons button:nth-child(1):hover {
+    background: #e5e7eb;
+}
+
+/* 답장 버튼 */
+.message-buttons button:nth-child(2) {
+    background: #3b82f6;
+    color: white;
+}
+
+.message-buttons button:nth-child(2):hover {
+    background: #2563eb;
+}
+
+/* 삭제 버튼 */
+.message-buttons .delete-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.message-buttons .delete-btn:hover {
+    background: #dc2626;
+}
+
+/* 버튼 클릭 시 살짝 눌리는 효과 */
+.message-buttons button:active {
+    transform: scale(0.97);
+}
+
+/* 반응형 */
+@media (max-width: 480px) {
+    .message-buttons {
+        flex-direction: column;
+    }
+    .message-buttons button {
+        width: 100%;
+    }
+}

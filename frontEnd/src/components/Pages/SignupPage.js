@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signup } from '../../api/auth';
+import PasswordStrengthBar from "../Common/PasswordStrengthBar";
 import './Auth.css';
 
 import {
@@ -192,9 +193,11 @@ export default function SignupPage() {
                         name="password"
                         value={form.password}
                         onChange={handleChange}
+                        placeholder="비밀번호 입력"
                         required
                     />
                 </label>
+                <PasswordStrengthBar password={form.password} />
                 <label>
                     비밀번호 확인{" "}
                     <input
@@ -202,6 +205,7 @@ export default function SignupPage() {
                         name="passwordCheck"
                         value={form.passwordCheck}
                         onChange={handleChange}
+                        placeholder="비밀번호 확인"
                         required
                     />
                 </label>

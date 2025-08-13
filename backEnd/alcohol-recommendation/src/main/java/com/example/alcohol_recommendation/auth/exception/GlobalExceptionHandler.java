@@ -1,4 +1,3 @@
-// src/main/java/com/teamProject/UKA/auth/exception/GlobalExceptionHandler.java
 package com.example.alcohol_recommendation.auth.exception;
 
 import java.time.LocalDateTime;

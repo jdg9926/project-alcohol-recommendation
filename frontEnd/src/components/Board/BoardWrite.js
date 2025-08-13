@@ -117,7 +117,7 @@ export default function BoardWrite() {
                 formData.append("files", file);
             });
 
-            const response = await fetch(`${BASE_URL}:8888/api/board/write`, {
+            const response = await fetch(`${BASE_URL}/api/board/write`, {
                 method: "POST",
                 headers: {
                     "Authorization": loginToken ? `Bearer ${loginToken}` : undefined
@@ -131,7 +131,7 @@ export default function BoardWrite() {
                 throw new Error(errorText || "글 등록에 실패하였습니다.");
             } else {
                 alert("글이 등록되었습니다!");
-                navigate(`/?boardType=${boardType}`);
+                navigate(`/board?boardType=${boardType}`);
             }
         } catch (err) {
             await logErrorToBoard({
@@ -161,8 +161,6 @@ export default function BoardWrite() {
             ['clean']
         ]
     };
-
-    console.log("files :::", files);
 
     return (
         <div className="board-write-form">

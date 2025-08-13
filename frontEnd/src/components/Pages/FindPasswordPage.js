@@ -1,91 +1,164 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-import Error from "../Common/Error";
-import { BASE_URL } from '../../api/baseUrl';
+// src/components/Pages/FindPasswordPage.js
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { sendVerificationCodeApi, verifyEmailCode } from "./SignupActive";
 
 export default function FindPasswordPage() {
-    const [userId, setUserId] = useState('');
-    const [email, setEmail] = useState('');
-
-    const [info, setInfo] = useState('');
-    const [error, setError] = useState('');
-    
     const navigate = useNavigate();
+    const [form, setForm] = useState({
+        emailId: "",
+        emailDomain: "naver.com",
+        customDomain: "",
+        code: "",
+    });
+    const [codeSent, setCodeSent] = useState(false);
+    const [isEmailVerified, setIsEmailVerified] = useState(false);
+    const [error, setError] = useState(null);
 
-    const handleSubmit = async e => {
-        e.preventDefault();
-        setError(''); 
-        setInfo('');
-        try {
-            const res = await fetch(`${BASE_URL}:8888/api/auth/reset-password-request`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type':'application/json'
-                },
-                body: JSON.stringify({ 
-                    userId,
-                    email
-                })
-            });
-            const body = await res.json();
-            if (!res.ok) throw new Error(body.message);
-            setInfo('비밀번호 재설정 링크가 이메일로 발송되었습니다.');
-        } catch (err) {
-            setError(err.message);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
+        if (["emailId", "emailDomain", "customDomain"].includes(name)) {
+            setIsEmailVerified(false);
+            setCodeSent(false);
         }
-        // finally 블록은 제거
     };
 
-    if (error) return <Error type={error.type} detail={error.detail} />;
+    const handleDomainChange = (e) => {
+        setForm({ ...form, emailDomain: e.target.value, customDomain: "" });
+    };
+
+    const sendVerificationCode = async () => {
+        const email =
+            form.emailDomain === "custom"
+                ? `${form.emailId}@${form.customDomain}`
+                : `${form.emailId}@${form.emailDomain}`;
+
+        try {
+            await sendVerificationCodeApi(email, "passwordReset");
+            setCodeSent(true);
+            alert("인증번호가 발송되었습니다!");
+        } catch (err) {
+            setError(err.message || "인증번호 발송 실패");
+        }
+    };
+
+    const handleVerifyEmailCode = async () => {
+        const email =
+            form.emailDomain === "custom"
+                ? `${form.emailId}@${form.customDomain}`
+                : `${form.emailId}@${form.emailDomain}`;
+        try {
+            await verifyEmailCode({ email, code: form.code }, setIsEmailVerified);
+        } catch (err) {
+            setError(err.message || "인증 실패");
+        }
+    };
+
+    const handleNext = () => {
+        const email =
+            form.emailDomain === "custom"
+                ? `${form.emailId}@${form.customDomain}`
+                : `${form.emailId}@${form.emailDomain}`;
+        navigate("/reset-password", { state: { email } });
+    };
 
     return (
         <div className="auth-container">
-            <form onSubmit={handleSubmit} className="auth-form">
-                <label>
-                    아이디{" "}
+            <h2>비밀번호 찾기</h2>
+            {error && <p className="error">{error}</p>}
+
+            <label>
+                이메일
+                <div className="email-group">
                     <input
                         type="text"
-                        value={userId}
-                        onChange={e=>setUserId(e.target.value)}
-                        required 
+                        name="emailId"
+                        placeholder="이메일"
+                        value={form.emailId}
+                        onChange={handleChange}
+                        required
+                        className="email-id"
                     />
-                </label>
-                <label>
-                    이메일{" "}
+                    <span className="email-at">@</span>
+                    {form.emailDomain === "custom" ? (
+                        <input
+                            type="text"
+                            name="customDomain"
+                            placeholder="직접입력"
+                            value={form.customDomain}
+                            onChange={handleChange}
+                            required
+                            className="email-domain"
+                        />
+                    ) : (
+                        <input
+                            type="text"
+                            value={form.emailDomain}
+                            disabled
+                            className="email-domain"
+                        />
+                    )}
+                    <select
+                        name="emailDomain"
+                        value={form.emailDomain}
+                        onChange={handleDomainChange}
+                        className="email-select"
+                    >
+                        <option value="naver.com">naver.com</option>
+                        <option value="gmail.com">gmail.com</option>
+                        <option value="custom">직접입력</option>
+                    </select>
+                </div>
+            </label>
+
+            <div className="inline-field">
+                <label htmlFor="code">인증번호</label>
+                <div className="inline-duplicate-wrapper">
                     <input
-                        type="email"
-                        value={email}
-                        onChange={e=>setEmail(e.target.value)}
-                        required 
+                        type="text"
+                        name="code"
+                        id="code"
+                        value={form.code}
+                        onChange={handleChange}
+                        required
+                        disabled={!codeSent || isEmailVerified}
                     />
-                </label>
-                <button type="submit">링크 발송</button>
-            </form>
-            { info && 
-                <p className="info">
-                    {info}
-                </p> 
-            }
-            {/* 아래 error는 위에서 Error 컴포넌트로 이미 처리했으므로 필요 없다면 삭제 */}
-            <button 
-                onClick={()=>navigate('/login')}
-                style={{
-                    display: "block",
-                    margin: "2rem auto 0 auto",
-                    padding: "0.7rem 0",
-                    width: "100%",
-                    background: "#f0f0f0",
-                    borderRadius: "7px",
-                    border: "none",
-                    fontWeight: 500,
-                    color: "#008ecc",
-                    fontSize: "1.01rem",
-                    cursor: "pointer",
-                    letterSpacing: "0.02em"
-                }}
+                    {!codeSent ? (
+                        <button
+                            type="button"
+                            className="duplicate-send-button"
+                            onClick={sendVerificationCode}
+                            disabled={isEmailVerified}
+                        >
+                            번호 발송
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            className="duplicate-check-button"
+                            onClick={handleVerifyEmailCode}
+                            disabled={isEmailVerified}
+                        >
+                            인증 확인
+                        </button>
+                    )}
+                </div>
+                {isEmailVerified && (
+                    <div style={{ color: "#22c55e", fontSize: "0.98rem", marginTop: 4 }}>
+                        인증 성공!
+                    </div>
+                )}
+            </div>
+
+            <button
+                type="button"
+                className="signup-btn"
+                style={{ marginTop: "1.2rem" }}
+                disabled={!isEmailVerified}
+                onClick={handleNext}
             >
-                로그인으로 돌아가기
+                다음
             </button>
         </div>
     );

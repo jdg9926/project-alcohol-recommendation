@@ -1,109 +1,141 @@
+// src/components/MyPage/PasswordChange.js
 import { useState, useContext } from "react";
-import { BASE_URL } from "../../api/baseUrl";
-import { AuthContext } from "../../AuthContext";
+import { resetPasswordApi } from "../../api/auth";
+import PasswordStrengthBar from "../Common/PasswordStrengthBar";
+import { AuthContext } from "../../AuthContext"; // ★ 추가
 
 export default function PasswordChange() {
-    const [oldPw, setOldPw] = useState("");
-    const [newPw, setNewPw] = useState("");
-    const [confirmPw, setConfirmPw] = useState("");
-    const [message, setMessage] = useState("");
+    const { user } = useContext(AuthContext); // ★ 추가
+    const [form, setForm] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+    });
+    const [show, setShow] = useState({ current: false, next: false, confirm: false });
     const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState(null);
+    const [error, setError] = useState(null);
 
-    const { loginToken } = useContext(AuthContext);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
+        setError(null);
+        setMessage(null);
+    };
+
+    const validateForm = () => {
+        if (!form.currentPassword) return "현재 비밀번호를 입력하세요.";
+        if (!form.newPassword) return "새 비밀번호를 입력하세요.";
+        if (form.newPassword.length < 8) return "비밀번호는 8자리 이상이어야 합니다.";
+        if (!/[~!@#$%^&*()_\-+={};':"\\|,.<>/?]/.test(form.newPassword))
+            return "비밀번호에 특수문자를 포함해야 합니다.";
+        if (form.newPassword !== form.confirmPassword)
+            return "새 비밀번호와 확인이 일치하지 않습니다.";
+        if (form.currentPassword === form.newPassword)
+            return "현재 비밀번호와 다른 비밀번호를 사용하세요.";
+        return null;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessage("");
-
-        // 입력값 유효성 체크
-        if (!oldPw || !newPw || !confirmPw) {
-            setMessage("모든 항목을 입력해주세요.");
+        const validationError = validateForm();
+        if (validationError) {
+            setError(validationError);
             return;
         }
-        if (newPw.length < 6) {
-            setMessage("새 비밀번호는 6자 이상이어야 합니다.");
-            return;
-        }
-        if (newPw !== confirmPw) {
-            setMessage("새 비밀번호가 일치하지 않습니다.");
-            return;
-        }
-
-        setLoading(true);
-
         try {
-            const response = await fetch(`${BASE_URL}:8888/myPage/myPwChange`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${loginToken}`
-                },
-                body: JSON.stringify({
-                    oldPassword: oldPw,
-                    newPassword: newPw
-                })
+            setLoading(true);
+            await resetPasswordApi({
+                currentPassword: form.currentPassword,
+                newPassword: form.newPassword
             });
-
-            let data = {};
-            try {
-                data = await response.json();
-            } catch (jsonError) {
-                // 서버가 JSON이 아닌 값을 반환하는 경우 등
-                setMessage("서버에서 올바른 응답을 받지 못했습니다.");
-            }
-
-            if (response.ok) {
-                setMessage("비밀번호가 성공적으로 변경되었습니다!");
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                setMessage(data?.message || "비밀번호 변경 실패");
-            }
-        } catch (error) {
-            setMessage("비밀번호 변경 중 네트워크 오류가 발생했습니다.");
-            console.error("비밀번호 변경 요청 오류:", error);
+            setMessage("비밀번호가 성공적으로 변경되었습니다.");
+            setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        } catch (err) {
+            setError(err?.data?.message || "비밀번호 변경 실패");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <form className="password-change-form" onSubmit={handleSubmit}>
-            <div className="form-row">
-                <label htmlFor="oldPw">현재 비밀번호</label>
+        <div className="mypage-card">
+            <h3>비밀번호 변경</h3>
+            <form onSubmit={handleSubmit} className="form-vertical" autoComplete="on">
+                {/* ★ 자동완성/비번관리자용 숨김 username 필드 */}
+                <label className="visually-hidden" htmlFor="pc-username">아이디</label>
                 <input
-                    type="password"
-                    id="oldPw"
-                    className="profile-edit-input"
-                    value={oldPw}
-                    onChange={e => setOldPw(e.target.value)}
+                    id="pc-username"
+                    type="text"
+                    name="username"
+                    autoComplete="username"
+                    value={user?.email || user?.userId || ""}
+                    readOnly
+					hidden
+                    tabIndex={-1}
+                    className="visually-hidden"
+                    aria-hidden="true"
                 />
-            </div>
-            <div className="form-row">
-                <label htmlFor="newPw">새 비밀번호</label>
-                <input
-                    type="password"
-                    id="newPw"
-                    className="profile-edit-input"
-                    value={newPw}
-                    onChange={e => setNewPw(e.target.value)}
-                />
-            </div>
-            <div className="form-row">
-                <label htmlFor="confirmPw">새 비밀번호 확인</label>
-                <input
-                    type="password"
-                    id="confirmPw"
-                    className="profile-edit-input"
-                    value={confirmPw}
-                    onChange={e => setConfirmPw(e.target.value)}
-                />
-            </div>
-            <button className="profile-edit-btn" type="submit" disabled={loading}>
-                {loading ? "변경 중..." : "비밀번호 변경"}
-            </button>
-            {message && <div className="profile-edit-message">{message}</div>}
-        </form>
+
+                <label>
+                    현재 비밀번호
+                    <div className="input-with-btn">
+                        <input
+                            type={show.current ? "text" : "password"}
+                            name="currentPassword"
+                            value={form.currentPassword}
+                            onChange={handleChange}
+                            required
+                            autoComplete="current-password"
+                        />
+                        <button type="button" className="btn ghost" onClick={() => setShow((s) => ({ ...s, current: !s.current }))}>
+                            {show.current ? "숨기기" : "표시"}
+                        </button>
+                    </div>
+                </label>
+
+                <label>
+                    새 비밀번호
+                    <div className="input-with-btn">
+                        <input
+                            type={show.next ? "text" : "password"}
+                            name="newPassword"
+                            value={form.newPassword}
+                            onChange={handleChange}
+                            required
+                            autoComplete="new-password"
+                        />
+                        <button type="button" className="btn ghost" onClick={() => setShow((s) => ({ ...s, next: !s.next }))}>
+                            {show.next ? "숨기기" : "표시"}
+                        </button>
+                    </div>
+                </label>
+                <PasswordStrengthBar password={form.newPassword} />
+
+                <label>
+                    새 비밀번호 확인
+                    <div className="input-with-btn">
+                        <input
+                            type={show.confirm ? "text" : "password"}
+                            name="confirmPassword"
+                            value={form.confirmPassword}
+                            onChange={handleChange}
+                            required
+                            autoComplete="new-password"
+                        />
+                        <button type="button" className="btn ghost" onClick={() => setShow((s) => ({ ...s, confirm: !s.confirm }))}>
+                            {show.confirm ? "숨기기" : "표시"}
+                        </button>
+                    </div>
+                </label>
+
+                {error && <p className="form-error" id="pc-error" aria-live="polite">{error}</p>}
+                {message && <p className="form-success" aria-live="polite">{message}</p>}
+
+                <button type="submit" disabled={loading}>
+                    {loading ? "변경 중..." : "비밀번호 변경"}
+                </button>
+            </form>
+        </div>
     );
 }

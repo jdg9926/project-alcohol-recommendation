@@ -1,4 +1,6 @@
-import { useContext, useState } from "react";
+// src/components/MyPage/MyPage.js
+import { useContext, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AuthContext } from "../../AuthContext";
 import MyPostsList from "./MyPostsList";
 import MyCommentsList from "./MyCommentsList";
@@ -6,41 +8,67 @@ import MyScrapList from "./MyScrapList";
 import MyLikeList from "./MyLikeList";
 import ProfileEdit from "./ProfileEdit";
 import PasswordChange from "./PasswordChange";
-
-import './MyPage.css';
+import DeleteAccount from "./DeleteAccount";
+import "./MyPage.css";
 
 export default function MyPage() {
-    const { user } = useContext(AuthContext);
-    const [tab, setTab] = useState("posts");
+	const { user } = useContext(AuthContext);
+	const [params, setParams] = useSearchParams();
+	const tab = params.get("tab") || "posts";
 
-    if (!user) return <div>로그인이 필요합니다.</div>;
+	const switchTab = useCallback((key) => {
+		const next = new URLSearchParams(params);
+		next.set("tab", key);
+		setParams(next, { replace: true });
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}, [params, setParams]);
 
-    return (
-        <div className="mypage-wrap">
-            <div className="mypage-profile">
-                <h2>마이페이지</h2>
-                <div>닉네임: {user.nickname}</div>
-                <div>이메일: {user.email}</div>
-                <div>가입일: {user.createdAt?.slice(0, 10)}</div>
-            </div>
+	const tabs = useMemo(
+		() => [
+			{ key: "posts", label: "내 글", component: <MyPostsList user={user} /> },
+			{ key: "comments", label: "내 댓글", component: <MyCommentsList user={user} /> },
+			{ key: "scrap", label: "스크랩", component: <MyScrapList user={user} /> },
+			{ key: "like", label: "좋아요", component: <MyLikeList user={user} /> },
+			{ key: "profile", label: "회원정보 수정", component: <ProfileEdit user={user} /> },
+			{ key: "password", label: "비밀번호 변경", component: <PasswordChange /> },
+			{ key: "deleteAccount", label: "회원 탈퇴", component: <DeleteAccount /> }
+		],
+		[user]
+	);
 
-            <div className="mypage-tabs">
-                <button onClick={() => setTab("posts")} className={tab === "posts" ? "active" : ""}>내 글</button>
-                <button onClick={() => setTab("comments")} className={tab === "comments" ? "active" : ""}>내 댓글</button>
-                <button onClick={() => setTab("scrap")} className={tab === "scrap" ? "active" : ""}>스크랩</button>
-                <button onClick={() => setTab("like")} className={tab === "like" ? "active" : ""}>좋아요</button>
-                <button onClick={() => setTab("profile")} className={tab === "profile" ? "active" : ""}>회원정보 수정</button>
-                <button onClick={() => setTab("password")} className={tab === "password" ? "active" : ""}>비밀번호 변경</button>
-            </div>
+	if (!user) return <div className="mypage-wrap">로그인이 필요합니다.</div>;
 
-            <div className="mypage-content">
-                {tab === "posts" && <MyPostsList user={user} />}
-                {tab === "comments" && <MyCommentsList user={user} />}
-                {tab === "scrap" && <MyScrapList user={user} />}
-                {tab === "like" && <MyLikeList user={user} />}
-                {tab === "profile" && <ProfileEdit user={user} />}
-                {tab === "password" && <PasswordChange user={user} />}
-            </div>
-        </div>
-    );
+	const activeTab = tabs.find((t) => t.key === tab) ?? tabs[0];
+
+	return (
+		<div className="mypage-wrap">
+			{/* 프로필 영역 (이미지 제거) */}
+			<div className="mypage-profile">
+				<h2>마이페이지</h2>
+				<div>닉네임: {user.nickname}</div>
+				<div>이메일: {user.email}</div>
+				<div>가입일: {user.createdAt?.slice(0, 10)}</div>
+			</div>
+
+			{/* 탭 버튼 */}
+			<div className="mypage-tabs" role="tablist" aria-label="마이페이지 탭">
+				{tabs.map(({ key, label }) => (
+					<button
+						key={key}
+						onClick={() => switchTab(key)}
+						className={tab === key ? "active" : ""}
+						role="tab"
+						aria-selected={tab === key}
+					>
+						{label}
+					</button>
+				))}
+			</div>
+
+			{/* 탭 내용 */}
+			<div className="mypage-content">
+				{activeTab.component}
+			</div>
+		</div>
+	);
 }
