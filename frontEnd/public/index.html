@@ -21,22 +21,13 @@
     rel="stylesheet"
   />
 
-  <!-- Content Security Policy (frame-ancestors 제외) -->
+  <!-- Content Security Policy: 개발용 전체 허용 -->
   <meta
     http-equiv="Content-Security-Policy"
-    content="
-      default-src 'self';
-      script-src 'self';
-      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-      font-src 'self' https://fonts.gstatic.com;
-      img-src 'self' data: blob:;
-      connect-src 'self' http://localhost:8888 http://43.200.182.46:8888;
-      object-src 'none';
-      base-uri 'self';
-    "
+    content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;"
   />
 
-  <title>React App</title>
+  <title>🍷 Project Alcohol Recommendation</title>
 </head>
 <body>
   <noscript>JavaScript를 활성화해야 이 앱을 사용할 수 있습니다.</noscript>

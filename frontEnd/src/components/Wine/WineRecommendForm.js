@@ -7,7 +7,7 @@ import { tasteOptions, aromaOptions } from "../../Data/options";
 import MultiSelectButtons from "./MultiSelectButtons";
 import SliderInput from "./SliderInput";
 
-import { BASE_URL } from "../../api/baseUrl";
+import { PYTHON_URL } from "../../api/baseUrl";
 
 /* 스타일 */
 import "./WineRecommendForm.css";
@@ -60,11 +60,13 @@ export default function WineRecommendForm({ onRecommend }) {
 
         console.log("userInput ::", userInput);
         try {
-            const response = await axios.post(`${BASE_URL}:8000/recommend`, userInput);
-            console.log("response ::", response.data.recommendation);
-            if (onRecommend) onRecommend(response.data.recommendation);
+            const response = await axios.post(`${PYTHON_URL}/recommend`, { data: userInput });
+            console.log("response ::", response.data.result);
+            if (onRecommend) onRecommend(response.data.result);
         } catch (error) {
-            console.log(error);
+            if (error.response) {
+                console.error("422 error detail:", error.response.data);
+            }
             alert("추천 요청 실패!");
         }
     };

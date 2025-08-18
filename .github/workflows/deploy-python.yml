@@ -1,42 +1,69 @@
 name: Deploy Python FastAPI to EC2
 
 on:
-  push:
-    branches: [ master ] # 브랜치 맞게 수정
+    push:
+        branches: [ master ]
+        paths:
+            - "python/**"
+            - ".github/workflows/deploy-python.yml"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: deploy-python-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    deploy:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Prepare server directory
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            mkdir -p /home/ubuntu/apps/myproject-python
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
 
-      - name: Upload Python source code
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          source: python/*
-          target: /home/ubuntu/apps/myproject-python
+            - name: Prepare remote directory
+              uses: appleboy/ssh-action@v1.2.0
+              with:
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ${{ secrets.EC2_USER }}
+                  key: ${{ secrets.EC2_KEY }}
+                  script: |
+                      sudo mkdir -p /home/ubuntu/apps/myproject-python
+                      sudo chown -R $USER:$USER /home/ubuntu/apps/myproject-python
+                      rm -rf /home/ubuntu/apps/myproject-python/*
 
-      - name: Restart Python service
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            sudo systemctl daemon-reload || true
-            sudo systemctl restart myproject-python
-            sudo systemctl --no-pager status myproject-python
+            - name: Upload source to EC2
+              uses: appleboy/scp-action@v0.1.7
+              with:
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ${{ secrets.EC2_USER }}
+                  key: ${{ secrets.EC2_KEY }}
+                  source: "python/**"
+                  target: "/home/ubuntu/apps/myproject-python"
+
+            - name: Install deps & restart service
+              uses: appleboy/ssh-action@v1.2.0
+              with:
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ${{ secrets.EC2_USER }}
+                  key: ${{ secrets.EC2_KEY }}
+                  script: |
+                      cd /home/ubuntu/apps/myproject-python
+                      if [ ! -d .venv ]; then
+                          python3 -m venv .venv
+                      fi
+                      . .venv/bin/activate
+                      pip install -U pip wheel
+                      if [ -f requirements.txt ]; then
+                          pip install -r requirements.txt
+                      fi
+                      sudo systemctl restart myproject-python
+                      sudo systemctl --no-pager status myproject-python
