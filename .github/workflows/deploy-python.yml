@@ -65,5 +65,5 @@ jobs:
                       if [ -f requirements.txt ]; then
                           pip install -r requirements.txt
                       fi
-                      sudo systemctl restart myproject-python
-                      sudo systemctl --no-pager status myproject-python
+                      sudo systemctl restart python
+                      sudo systemctl --no-pager status python
