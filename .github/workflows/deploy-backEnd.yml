@@ -1,104 +1,79 @@
 name: Deploy Spring Boot Backend to EC2
 
 on:
-    push:
-        branches: [ master ]
-        paths:
-            - "backEnd/**"
-            - ".github/workflows/deploy-backEnd.yml"
-    workflow_dispatch:
+  push:
+    branches: [ master ]
+    paths:
+      - "backEnd/**"
+      - ".github/workflows/deploy-backEnd.yml"
+  workflow_dispatch:
 
 permissions:
-    contents: read
+  contents: read
 
 concurrency:
-    group: deploy-backend-${{ github.ref }}
-    cancel-in-progress: true
+  group: deploy-backend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    build-and-deploy:
-        runs-on: ubuntu-latest
-        timeout-minutes: 40
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Detect build tool
-              id: detect
-              run: |
-                  if [ -f backEnd/gradlew ]; then
-                      echo "tool=gradle" >> $GITHUB_OUTPUT
-                  elif [ -f backEnd/pom.xml ]; then
-                      echo "tool=maven" >> $GITHUB_OUTPUT
-                  else
-                      echo "No Gradle or Maven build files found in backEnd/"
-                      exit 1
-                  fi
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
 
-            - name: Set up JDK 21
-              uses: actions/setup-java@v4
-              with:
-                  distribution: temurin
-                  java-version: "21"
-                  cache: ${{ steps.detect.outputs.tool }}
+      - name: Build with Gradle
+        working-directory: backEnd/alcohol-recommendation
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build -x test
+        shell: bash
 
-            - name: Build (Gradle)
-              if: steps.detect.outputs.tool == 'gradle'
-              working-directory: backEnd
-              run: |
-                  chmod +x gradlew
-                  ./gradlew clean build -x test
-              shell: bash
+      - name: Resolve artifact path
+        id: artifact
+        working-directory: backEnd/alcohol-recommendation
+        run: |
+          JAR_FILE=$(ls -1t build/libs/*.jar | head -n1)
+          echo "jar_path=${JAR_FILE}" >> $GITHUB_OUTPUT
+          echo "Resolved: ${JAR_FILE}"
 
-            - name: Build (Maven)
-              if: steps.detect.outputs.tool == 'maven'
-              working-directory: backEnd
-              run: |
-                  if [ -f mvnw ]; then chmod +x mvnw; fi
-                  ./mvnw -B -DskipTests clean package
-              shell: bash
+      - name: Prepare remote directory
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            sudo mkdir -p /home/ubuntu/apps/myproject-backend
+            sudo chown -R $USER:$USER /home/ubuntu/apps/myproject-backend
 
-            - name: Resolve artifact path
-              id: artifact
-              working-directory: backEnd
-              run: |
-                  if [ "${{ steps.detect.outputs.tool }}" = "gradle" ]; then
-                      JAR_FILE=$(ls -1t build/libs/*.jar | head -n1)
-                  else
-                      JAR_FILE=$(ls -1t target/*.jar | head -n1)
-                  fi
-                  echo "jar_path=${JAR_FILE}" >> $GITHUB_OUTPUT
-                  echo "Resolved: ${JAR_FILE}"
+      - name: Upload JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "${{ steps.artifact.outputs.jar_path }}"
+          target: "/home/ubuntu/apps/myproject-backend/"
 
-            - name: Prepare remote directory
-              uses: appleboy/ssh-action@v1.2.0
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  script: |
-                      sudo mkdir -p /home/ubuntu/apps/myproject-backend
-                      sudo chown -R $USER:$USER /home/ubuntu/apps/myproject-backend
-
-            - name: Upload JAR to EC2
-              uses: appleboy/scp-action@v0.1.7
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  source: "${{ steps.artifact.outputs.jar_path }}"
-                  target: "/home/ubuntu/apps/myproject-backend/"
-
-            - name: Restart backend service
-              uses: appleboy/ssh-action@v1.2.0
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  script: |
-                      cd /home/ubuntu/apps/myproject-backend
-                      LATEST=$(ls -1t *.jar | head -n1)
-                      cp -f "$LATEST" app.jar
-                      sudo systemctl restart myproject-backend
-                      sudo systemctl --no-pager status myproject-backend
+      - name: Restart backend service
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ubuntu/apps/myproject-backend
+            LATEST=$(ls -1t *.jar | head -n1)
+            cp -f "$LATEST" app.jar
+            sudo systemctl restart myproject-backend
+            sudo systemctl --no-pager status myproject-backend
