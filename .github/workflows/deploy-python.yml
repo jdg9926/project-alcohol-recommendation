@@ -24,12 +24,6 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            # (옵션) 러너에서 테스트/린트할 때만 필요
-            - name: Set up Python (optional)
-              uses: actions/setup-python@v5
-              with:
-                  python-version: "3.11"
-
             - name: Prepare remote directories
               uses: appleboy/ssh-action@v1.2.0
               with:
@@ -38,8 +32,10 @@ jobs:
                   key: ${{ secrets.EC2_KEY }}
                   script: |
                       set -e
-                      mkdir -p /home/ubuntu/apps/python /home/ubuntu/apps/python_tmp /home/ubuntu/logs/python
-                      chown -R $USER:$USER /home/ubuntu/apps/python /home/ubuntu/apps/python_tmp /home/ubuntu/logs/python
+                      sudo mkdir -p /home/ubuntu/apps/python /home/ubuntu/apps/python_tmp /home/ubuntu/logs/python
+                      sudo chown -R ubuntu:ubuntu /home/ubuntu/apps/python /home/ubuntu/apps/python_tmp
+                      # 로그 디렉터리만 소유자 정리 (파일은 root여도 무방)
+                      sudo chown -R ubuntu:ubuntu /home/ubuntu/logs/python || true
 
             - name: Upload source to temp on EC2
               uses: appleboy/scp-action@v0.1.7
@@ -59,7 +55,6 @@ jobs:
                   script: |
                       set -e
                       cd /home/ubuntu/apps
-                      # 코드만 동기화(.venv/로그 보존)
                       rsync -a --delete \
                         --exclude '.venv/' \
                         --exclude '__pycache__/' \
@@ -67,8 +62,6 @@ jobs:
                         python_tmp/ python/
 
                       cd /home/ubuntu/apps/python
-
-                      # 가상환경 준비(존재 시 재사용)
                       if [ ! -d ".venv" ]; then
                           python3 -m venv .venv
                       fi
@@ -79,7 +72,6 @@ jobs:
                       fi
                       deactivate
 
-                      # 서비스 재시작
                       sudo systemctl daemon-reload
                       sudo systemctl restart myproject-python
                       sudo systemctl --no-pager status myproject-python || true
