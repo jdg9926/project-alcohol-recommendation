@@ -26,13 +26,12 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Build bootJar
+      - name: Build with Gradle
+        working-directory: backEnd/alcohol-recommendation
         run: |
-          cd backEnd/alcohol-recommendation
           chmod +x ./gradlew
           ./gradlew clean bootJar -x test
           ls -l build/libs
-          echo "JAR_GLOB=backEnd/alcohol-recommendation/build/libs/*.jar" >> $GITHUB_ENV
 
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -40,8 +39,8 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "${{ env.JAR_GLOB }}"
-          target: "/home/ubuntu/apps/backend/"
+          source: "backEnd/alcohol-recommendation/build/libs/*.jar"
+          target: "/home/ubuntu/apps/backend/app.jar"
           overwrite: true
 
       - name: Activate & Restart backend.service
@@ -52,10 +51,6 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             set -e
-            mkdir -p /home/ubuntu/apps/backend
-            LATEST_JAR=$(ls -t /home/ubuntu/apps/backend/*.jar | head -n1)
-            echo "LATEST_JAR=$LATEST_JAR"
-            mv -f "$LATEST_JAR" /home/ubuntu/apps/backend/app.jar
             chmod 644 /home/ubuntu/apps/backend/app.jar
             sudo systemctl daemon-reload || true
             sudo systemctl restart backend
