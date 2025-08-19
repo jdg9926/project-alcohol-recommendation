@@ -42,7 +42,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           source: "${{ env.JAR_GLOB }}"
-          target: "/home/ubuntu/apps/backend/"
+          target: "/home/ubuntu/apps/backend/app-latest.jar"
           overwrite: true
 
       - name: Activate & Restart backend.service
