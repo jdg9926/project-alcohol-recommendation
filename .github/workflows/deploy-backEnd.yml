@@ -26,52 +26,22 @@ jobs:
                   java-version: '17'
                   cache: 'gradle'
 
-            - name: Locate gradlew & project dir
-              id: locate
-              shell: bash
-              run: |
-                  set -e
-                  # 1) gradlew 위치 탐색 (실행 가능 파일)
-                  if [ -x ./gradlew ]; then
-                      echo "GRADLEW=./gradlew" >> $GITHUB_ENV
-                  elif [ -x backEnd/gradlew ]; then
-                      echo "GRADLEW=backEnd/gradlew" >> $GITHUB_ENV
-                  elif [ -x backEnd/alcohol-recommendation/gradlew ]; then
-                      echo "GRADLEW=backEnd/alcohol-recommendation/gradlew" >> $GITHUB_ENV
-                  else
-                      echo "gradlew not found in expected locations." >&2
-                      echo "Put gradle wrapper in repo (gradlew, gradle/wrapper/) or adjust this step." >&2
-                      exit 1
-                  fi
-
-                  # 2) 프로젝트 디렉토리 결정
-                  if [ -f backEnd/settings.gradle ] || [ -f backEnd/settings.gradle.kts ]; then
-                      # 멀티모듈: backEnd 가 루트이고 includes 안에 :alcohol-recommendation 존재
-                      echo "PROJECT_DIR=backEnd" >> $GITHUB_ENV
-                  else
-                      # 단일모듈: 모듈 디렉토리가 프로젝트 루트
-                      echo "PROJECT_DIR=backEnd/alcohol-recommendation" >> $GITHUB_ENV
-                  fi
-
-                  echo "Using GRADLEW=$(cat $GITHUB_ENV | grep '^GRADLEW=' | cut -d= -f2)"
-                  echo "Using PROJECT_DIR=$(cat $GITHUB_ENV | grep '^PROJECT_DIR=' | cut -d= -f2)"
+            - name: Setup Gradle (no wrapper)
+              uses: gradle/actions/setup-gradle@v3
+              with:
+                  gradle-version: 8.7
 
             - name: Build bootJar
-              shell: bash
+              working-directory: backEnd/alcohol-recommendation
               run: |
                   set -e
-                  chmod +x "${GRADLEW}" || true
-                  if [ "${PROJECT_DIR}" = "backEnd" ]; then
-                      # 멀티모듈일 때 명시적으로 프로젝트 지정
-                      "${GRADLEW}" -p backEnd clean :alcohol-recommendation:bootJar -x test
-                      JAR_DIR="backEnd/alcohol-recommendation/build/libs"
-                  else
-                      # 단일모듈(프로젝트 루트가 모듈)
-                      "${GRADLEW}" -p backEnd/alcohol-recommendation clean bootJar -x test
-                      JAR_DIR="backEnd/alcohol-recommendation/build/libs"
-                  fi
-                  ls -l "${JAR_DIR}"
-                  echo "JAR_GLOB=${JAR_DIR}/*.jar" >> $GITHUB_ENV
+                  gradle --version
+                  gradle clean bootJar -x test
+                  echo "== built JARs =="
+                  ls -l build/libs
+                  # 가장 최신 JAR 경로를 환경변수에 기록
+                  LAST_JAR=$(ls -t build/libs/*.jar | head -n1)
+                  echo "JAR_PATH=$LAST_JAR" >> $GITHUB_ENV
 
             - name: Upload JAR to EC2
               uses: appleboy/scp-action@v0.1.7
@@ -79,7 +49,7 @@ jobs:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_KEY }}
-                  source: "${{ env.JAR_GLOB }}"
+                  source: "${{ env.JAR_PATH }}"
                   target: "/home/ubuntu/apps/backend/"
                   overwrite: true
 
