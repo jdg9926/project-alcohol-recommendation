@@ -1,10 +1,8 @@
-name: Deploy Python FastAPI to EC2
+name: Deploy Python to EC2
 
 on:
   push:
     branches: [ "master" ]
-    paths:
-      - "python/**"
 
 jobs:
   deploy-python:
@@ -14,7 +12,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Upload Python source to EC2
+      - name: Upload Python Source to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -23,7 +21,7 @@ jobs:
           source: "python/*"
           target: "/home/ubuntu/apps/python/"
 
-      - name: Install Dependencies & Restart Python Service
+      - name: Install Dependencies & Restart Service
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -31,8 +29,8 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             cd /home/ubuntu/apps/python
-            if [ ! -d .venv ]; then python3 -m venv .venv; fi
-            . .venv/bin/activate
-            pip install -U pip
-            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            python3 -m venv .venv
+            source .venv/bin/activate
+            pip install -r requirements.txt
+            deactivate
             sudo systemctl restart python.service
