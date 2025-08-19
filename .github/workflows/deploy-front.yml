@@ -1,27 +1,31 @@
-name: Frontend CI/CD
+name: Deploy Frontend to EC2
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "master" ]
+    paths:
+      - "frontEnd/**"
 
 jobs:
   deploy-frontend:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install & Build
+      - name: Install and Build Frontend
         working-directory: frontEnd
         run: |
-          npm ci
+          npm install
           npm run build
 
-      - name: Upload build to EC2
+      - name: Upload Frontend build to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -30,14 +34,11 @@ jobs:
           source: "frontEnd/build/*"
           target: "/home/ubuntu/apps/frontend/"
 
-      - name: Restart Frontend
+      - name: Restart Frontend Service
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd /home/ubuntu/apps/frontend
-            npm install -g serve
-            pkill -f "serve" || true
-            nohup serve -s . -l 3000 > frontend.log 2>&1 &
+            sudo systemctl restart frontend.service

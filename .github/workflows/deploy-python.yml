@@ -1,15 +1,18 @@
-name: Python CI/CD
+name: Deploy Python FastAPI to EC2
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "master" ]
+    paths:
+      - "python/**"
 
 jobs:
   deploy-python:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Upload Python source to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -20,7 +23,7 @@ jobs:
           source: "python/*"
           target: "/home/ubuntu/apps/python/"
 
-      - name: Restart Python
+      - name: Install Dependencies & Restart Python Service
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -32,5 +35,4 @@ jobs:
             . .venv/bin/activate
             pip install -U pip
             if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-            pkill -f 'uvicorn' || true
-            nohup .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 > python.log 2>&1 &
+            sudo systemctl restart python.service
