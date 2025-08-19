@@ -24,40 +24,52 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Set up Python
+            # (옵션) 러너에서 테스트/린트할 때만 필요
+            - name: Set up Python (optional)
               uses: actions/setup-python@v5
               with:
                   python-version: "3.11"
 
-            - name: Prepare remote directory
+            - name: Prepare remote directories
               uses: appleboy/ssh-action@v1.2.0
               with:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_KEY }}
                   script: |
-                      sudo mkdir -p /home/ubuntu/apps/myproject-python
-                      sudo chown -R $USER:$USER /home/ubuntu/apps/myproject-python
-                      rm -rf /home/ubuntu/apps/myproject-python/*
+                      set -e
+                      mkdir -p /home/ubuntu/apps/python /home/ubuntu/apps/python_tmp /home/ubuntu/logs/python
+                      chown -R $USER:$USER /home/ubuntu/apps/python /home/ubuntu/apps/python_tmp /home/ubuntu/logs/python
 
-            - name: Upload source to EC2
+            - name: Upload source to temp on EC2
               uses: appleboy/scp-action@v0.1.7
               with:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_KEY }}
                   source: "python/**"
-                  target: "/home/ubuntu/apps/myproject-python"
+                  target: "/home/ubuntu/apps/python_tmp"
 
-            - name: Install deps & restart service
+            - name: Sync, install deps, and restart service
               uses: appleboy/ssh-action@v1.2.0
               with:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_KEY }}
                   script: |
-                      cd /home/ubuntu/apps/myproject-python
-                      if [ ! -d .venv ]; then
+                      set -e
+                      cd /home/ubuntu/apps
+                      # 코드만 동기화(.venv/로그 보존)
+                      rsync -a --delete \
+                        --exclude '.venv/' \
+                        --exclude '__pycache__/' \
+                        --exclude '*.log' \
+                        python_tmp/ python/
+
+                      cd /home/ubuntu/apps/python
+
+                      # 가상환경 준비(존재 시 재사용)
+                      if [ ! -d ".venv" ]; then
                           python3 -m venv .venv
                       fi
                       . .venv/bin/activate
@@ -65,5 +77,9 @@ jobs:
                       if [ -f requirements.txt ]; then
                           pip install -r requirements.txt
                       fi
-                      sudo systemctl restart python
-                      sudo systemctl --no-pager status python
+                      deactivate
+
+                      # 서비스 재시작
+                      sudo systemctl daemon-reload
+                      sudo systemctl restart myproject-python
+                      sudo systemctl --no-pager status myproject-python || true
