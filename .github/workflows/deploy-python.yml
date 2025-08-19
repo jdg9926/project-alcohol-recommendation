@@ -1,77 +1,56 @@
-name: Deploy Python FastAPI to EC2
+name: Deploy Python API to EC2
 
 on:
     push:
         branches: [ master ]
         paths:
-            - "python/**"
-            - ".github/workflows/deploy-python.yml"
-    workflow_dispatch:
-
-permissions:
-    contents: read
+            - 'python/**'
+            - '.github/workflows/deploy-python.yml'
 
 concurrency:
-    group: deploy-python-${{ github.ref }}
+    group: deploy-python
     cancel-in-progress: true
 
 jobs:
     deploy:
         runs-on: ubuntu-latest
-        timeout-minutes: 30
 
         steps:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Prepare remote directories
-              uses: appleboy/ssh-action@v1.2.0
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  script: |
-                      set -e
-                      sudo mkdir -p /home/ubuntu/apps/python /home/ubuntu/apps/python_tmp /home/ubuntu/logs/python
-                      sudo chown -R ubuntu:ubuntu /home/ubuntu/apps/python /home/ubuntu/apps/python_tmp
-                      # 로그 디렉터리만 소유자 정리 (파일은 root여도 무방)
-                      sudo chown -R ubuntu:ubuntu /home/ubuntu/logs/python || true
-
-            - name: Upload source to temp on EC2
+            - name: Upload Python source to EC2 (strip top-level "python/")
               uses: appleboy/scp-action@v0.1.7
               with:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_KEY }}
                   source: "python/**"
-                  target: "/home/ubuntu/apps/python_tmp"
+                  target: "/home/ubuntu/apps/python/"
+                  strip_components: 1
+                  overwrite: true
 
-            - name: Sync, install deps, and restart service
-              uses: appleboy/ssh-action@v1.2.0
+            - name: Install deps & restart python.service
+              uses: appleboy/ssh-action@v1.0.3
               with:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_KEY }}
                   script: |
                       set -e
-                      cd /home/ubuntu/apps
-                      rsync -a --delete \
-                        --exclude '.venv/' \
-                        --exclude '__pycache__/' \
-                        --exclude '*.log' \
-                        python_tmp/ python/
-
                       cd /home/ubuntu/apps/python
-                      if [ ! -d ".venv" ]; then
-                          python3 -m venv .venv
-                      fi
+                      # venv 준비
+                      python3 -m venv .venv || true
                       . .venv/bin/activate
-                      pip install -U pip wheel
+                      python -m pip install --upgrade pip
                       if [ -f requirements.txt ]; then
                           pip install -r requirements.txt
                       fi
                       deactivate
-
-                      sudo systemctl daemon-reload
-                      sudo systemctl restart myproject-python
-                      sudo systemctl --no-pager status myproject-python || true
+                      # 서비스 재시작
+                      sudo systemctl daemon-reload || true
+                      sudo systemctl restart python
+                      sleep 2
+                      sudo systemctl status python --no-pager || true
+                      # 8000 리슨 확인 (uvicorn/서비스 기준)
+                      ss -ltnp | grep -E ':8000\b' || (echo 'python api not listening on 8000' && exit 1)
