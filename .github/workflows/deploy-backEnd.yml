@@ -40,23 +40,21 @@ jobs:
                   gradle clean bootJar -x test
                   echo "== built JARs =="
                   ls -l build/libs
-                  # 최신 JAR 파일명만 추출
                   LAST_JAR_FILE=$(ls -t build/libs/*.jar | head -n1 | xargs -n1 basename)
-                  # 리포 루트 기준 경로로 저장 (중요!)
                   echo "JAR_PATH=backEnd/alcohol-recommendation/build/libs/${LAST_JAR_FILE}" >> $GITHUB_ENV
                   echo "JAR_PATH set to: backEnd/alcohol-recommendation/build/libs/${LAST_JAR_FILE}"
 
-            - name: Upload JAR to EC2
+            - name: Upload JAR to EC2 as /home/ubuntu/apps/backend/app.jar
               uses: appleboy/scp-action@v0.1.7
               with:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_KEY }}
                   source: "${{ env.JAR_PATH }}"
-                  target: "/home/ubuntu/apps/backend/"
+                  target: "/home/ubuntu/apps/backend/app.jar"
                   overwrite: true
 
-            - name: Activate & Restart backend.service
+            - name: Restart backend.service
               uses: appleboy/ssh-action@v1.0.3
               with:
                   host: ${{ secrets.EC2_HOST }}
@@ -64,11 +62,7 @@ jobs:
                   key: ${{ secrets.EC2_KEY }}
                   script: |
                       set -e
-                      mkdir -p /home/ubuntu/apps/backend
-                      LATEST_JAR=$(ls -t /home/ubuntu/apps/backend/*.jar | head -n1)
-                      echo "LATEST_JAR=$LATEST_JAR"
-                      mv "$LATEST_JAR" /home/ubuntu/apps/backend/app.jar
-                      chmod 644 /home/ubuntu/apps/backend/app.jar
+                      ls -l /home/ubuntu/apps/backend/app.jar
                       sudo systemctl daemon-reload || true
                       sudo systemctl restart backend
                       sleep 2
