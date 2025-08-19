@@ -26,47 +26,13 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Locate gradlew & project dir
-        id: locate
-        shell: bash
-        run: |
-          set -e
-          # gradlew 위치 확인
-          if [ -x ./gradlew ]; then
-              echo "GRADLEW=./gradlew" >> $GITHUB_ENV
-          elif [ -x backEnd/gradlew ]; then
-              echo "GRADLEW=backEnd/gradlew" >> $GITHUB_ENV
-          elif [ -x backEnd/alcohol-recommendation/gradlew ]; then
-              echo "GRADLEW=backEnd/alcohol-recommendation/gradlew" >> $GITHUB_ENV
-          else
-              echo "gradlew not found in expected locations." >&2
-              exit 1
-          fi
-
-          # 프로젝트 디렉토리 확인
-          if [ -f backEnd/settings.gradle ] || [ -f backEnd/settings.gradle.kts ]; then
-              echo "PROJECT_DIR=backEnd" >> $GITHUB_ENV
-          else
-              echo "PROJECT_DIR=backEnd/alcohol-recommendation" >> $GITHUB_ENV
-          fi
-
-          echo "Using GRADLEW=$(cat $GITHUB_ENV | grep '^GRADLEW=' | cut -d= -f2)"
-          echo "Using PROJECT_DIR=$(cat $GITHUB_ENV | grep '^PROJECT_DIR=' | cut -d= -f2)"
-
       - name: Build bootJar
-        shell: bash
         run: |
-          set -e
-          chmod +x "${GRADLEW}" || true
-          if [ "${PROJECT_DIR}" = "backEnd" ]; then
-              "${GRADLEW}" -p backEnd clean :alcohol-recommendation:bootJar -x test
-              JAR_DIR="backEnd/alcohol-recommendation/build/libs"
-          else
-              "${GRADLEW}" -p backEnd/alcohol-recommendation clean bootJar -x test
-              JAR_DIR="backEnd/alcohol-recommendation/build/libs"
-          fi
-          ls -l "${JAR_DIR}"
-          echo "JAR_GLOB=${JAR_DIR}/*.jar" >> $GITHUB_ENV
+          cd backEnd/alcohol-recommendation
+          chmod +x ./gradlew
+          ./gradlew clean bootJar -x test
+          ls -l build/libs
+          echo "JAR_GLOB=backEnd/alcohol-recommendation/build/libs/*.jar" >> $GITHUB_ENV
 
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -93,6 +59,6 @@ jobs:
             chmod 644 /home/ubuntu/apps/backend/app.jar
             sudo systemctl daemon-reload || true
             sudo systemctl restart backend
-            sleep 2
+            sleep 3
             sudo systemctl status backend --no-pager || true
             ss -ltnp | grep -E ':8080\b' || (echo 'backend not listening on 8080' && exit 1)
