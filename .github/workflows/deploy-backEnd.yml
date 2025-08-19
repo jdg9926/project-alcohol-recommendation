@@ -26,13 +26,52 @@ jobs:
                   java-version: '17'
                   cache: 'gradle'
 
-            - name: Build (Gradle, :alcohol-recommendation)
-              working-directory: backEnd
+            - name: Locate gradlew & project dir
+              id: locate
+              shell: bash
               run: |
-                  chmod +x ./gradlew || true
-                  ./gradlew clean :alcohol-recommendation:bootJar -x test
-                  echo "== built JARs =="
-                  ls -l alcohol-recommendation/build/libs
+                  set -e
+                  # 1) gradlew 위치 탐색 (실행 가능 파일)
+                  if [ -x ./gradlew ]; then
+                      echo "GRADLEW=./gradlew" >> $GITHUB_ENV
+                  elif [ -x backEnd/gradlew ]; then
+                      echo "GRADLEW=backEnd/gradlew" >> $GITHUB_ENV
+                  elif [ -x backEnd/alcohol-recommendation/gradlew ]; then
+                      echo "GRADLEW=backEnd/alcohol-recommendation/gradlew" >> $GITHUB_ENV
+                  else
+                      echo "gradlew not found in expected locations." >&2
+                      echo "Put gradle wrapper in repo (gradlew, gradle/wrapper/) or adjust this step." >&2
+                      exit 1
+                  fi
+
+                  # 2) 프로젝트 디렉토리 결정
+                  if [ -f backEnd/settings.gradle ] || [ -f backEnd/settings.gradle.kts ]; then
+                      # 멀티모듈: backEnd 가 루트이고 includes 안에 :alcohol-recommendation 존재
+                      echo "PROJECT_DIR=backEnd" >> $GITHUB_ENV
+                  else
+                      # 단일모듈: 모듈 디렉토리가 프로젝트 루트
+                      echo "PROJECT_DIR=backEnd/alcohol-recommendation" >> $GITHUB_ENV
+                  fi
+
+                  echo "Using GRADLEW=$(cat $GITHUB_ENV | grep '^GRADLEW=' | cut -d= -f2)"
+                  echo "Using PROJECT_DIR=$(cat $GITHUB_ENV | grep '^PROJECT_DIR=' | cut -d= -f2)"
+
+            - name: Build bootJar
+              shell: bash
+              run: |
+                  set -e
+                  chmod +x "${GRADLEW}" || true
+                  if [ "${PROJECT_DIR}" = "backEnd" ]; then
+                      # 멀티모듈일 때 명시적으로 프로젝트 지정
+                      "${GRADLEW}" -p backEnd clean :alcohol-recommendation:bootJar -x test
+                      JAR_DIR="backEnd/alcohol-recommendation/build/libs"
+                  else
+                      # 단일모듈(프로젝트 루트가 모듈)
+                      "${GRADLEW}" -p backEnd/alcohol-recommendation clean bootJar -x test
+                      JAR_DIR="backEnd/alcohol-recommendation/build/libs"
+                  fi
+                  ls -l "${JAR_DIR}"
+                  echo "JAR_GLOB=${JAR_DIR}/*.jar" >> $GITHUB_ENV
 
             - name: Upload JAR to EC2
               uses: appleboy/scp-action@v0.1.7
@@ -40,7 +79,7 @@ jobs:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_KEY }}
-                  source: "backEnd/alcohol-recommendation/build/libs/*.jar"
+                  source: "${{ env.JAR_GLOB }}"
                   target: "/home/ubuntu/apps/backend/"
                   overwrite: true
 
@@ -53,7 +92,6 @@ jobs:
                   script: |
                       set -e
                       mkdir -p /home/ubuntu/apps/backend
-                      # 가장 최신 JAR를 app.jar 로 교체
                       LATEST_JAR=$(ls -t /home/ubuntu/apps/backend/*.jar | head -n1)
                       echo "LATEST_JAR=$LATEST_JAR"
                       mv "$LATEST_JAR" /home/ubuntu/apps/backend/app.jar
@@ -62,5 +100,4 @@ jobs:
                       sudo systemctl restart backend
                       sleep 2
                       sudo systemctl status backend --no-pager || true
-                      # 8080 리슨 확인
                       ss -ltnp | grep -E ':8080\b' || (echo 'backend not listening on 8080' && exit 1)
