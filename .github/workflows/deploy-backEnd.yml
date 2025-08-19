@@ -54,9 +54,12 @@ jobs:
           script: |
             set -e
             mkdir -p /home/ubuntu/apps/backend
-            LATEST_JAR=$(ls -t /home/ubuntu/apps/backend/*.jar | head -n1)
+            # 최신 jar만 선택 (app.jar 제외)
+            LATEST_JAR=$(ls -t /home/ubuntu/apps/backend/*.jar | grep -v 'app.jar' | head -n1)
             echo "LATEST_JAR=$LATEST_JAR"
-            cp -f "$LATEST_JAR" /home/ubuntu/apps/backend/app.jar
+            if [ -n "$LATEST_JAR" ]; then
+              cp -f "$LATEST_JAR" /home/ubuntu/apps/backend/app.jar
+            fi
             chmod 644 /home/ubuntu/apps/backend/app.jar
             sudo systemctl daemon-reload || true
             sudo systemctl restart backend
