@@ -1,68 +1,87 @@
 name: Deploy Backend to EC2
 
 on:
-  push:
-    branches: [ master ]
-    paths:
-      - 'backEnd/**'
-      - '.github/workflows/deploy-backEnd.yml'
+    push:
+        branches: [ master ]
+        paths:
+            - 'backEnd/**'
+            - '.github/workflows/deploy-backEnd.yml'
 
 concurrency:
-  group: deploy-backend
-  cancel-in-progress: true
+    group: deploy-backend
+    cancel-in-progress: true
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+    deploy:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
+            - name: Set up JDK 17
+              uses: actions/setup-java@v4
+              with:
+                  distribution: 'temurin'
+                  java-version: '17'
+                  cache: 'gradle'
 
-      - name: Build with Gradle
-        working-directory: backEnd/alcohol-recommendation
-        run: |
-          set -e
-          chmod +x ./gradlew
-          ./gradlew clean bootJar -x test
-          ls -l build/libs
-          echo "JAR_GLOB=backEnd/alcohol-recommendation/build/libs/*.jar" >> $GITHUB_ENV
+            # gradlew가 backEnd/alcohol-recommendation에 있다고 가정(네가 보낸 스샷 기준)
+            - name: Build with Gradle (bootJar)
+              working-directory: backEnd/alcohol-recommendation
+              run: |
+                  chmod +x ./gradlew || true
+                  ./gradlew clean bootJar -x test
+                  ls -l build/libs
+                  # 생성된 단일 JAR의 "정확한" 경로를 환경변수에 기록
+                  JAR_FILE=$(ls -t build/libs/*.jar | head -n1)
+                  echo "JAR_PATH=$JAR_FILE" >> $GITHUB_ENV
 
-      - name: Upload JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          source: "${{ env.JAR_GLOB }}"
-          target: "/home/ubuntu/apps/backend/app-latest.jar"
-          overwrite: true
+            # 단일 파일로 업로드해야 tar empty/디렉토리 생성 오류 안남
+            - name: Upload JAR to EC2 (to /home/ubuntu/apps/backend/releases/)
+              uses: appleboy/scp-action@v0.1.7
+              with:
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ${{ secrets.EC2_USER }}
+                  key: ${{ secrets.EC2_KEY }}
+                  source: "${{ env.JAR_PATH }}"
+                  target: "/home/ubuntu/apps/backend/releases/"
+                  overwrite: true
 
-      - name: Activate & Restart backend.service
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            set -e
-            mkdir -p /home/ubuntu/apps/backend
-            # 최신 jar만 선택 (app.jar 제외)
-            LATEST_JAR=$(ls -t /home/ubuntu/apps/backend/*.jar | grep -v 'app.jar' | head -n1)
-            echo "LATEST_JAR=$LATEST_JAR"
-            if [ -n "$LATEST_JAR" ]; then
-              cp -f "$LATEST_JAR" /home/ubuntu/apps/backend/app.jar
-            fi
-            chmod 644 /home/ubuntu/apps/backend/app.jar
-            sudo systemctl daemon-reload || true
-            sudo systemctl restart backend
-            sleep 3
-            sudo systemctl status backend --no-pager || true
-            ss -ltnp | grep -E ':8080\b' || (echo 'backend not listening on 8080' && exit 1)
+            # 서버에서 파일명 고정(app-latest.jar) + 재시작
+            - name: Activate & Restart backend.service
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ${{ secrets.EC2_USER }}
+                  key: ${{ secrets.EC2_KEY }}
+                  script: |
+                      set -e
+                      sudo mkdir -p /home/ubuntu/apps/backend/releases
+                      sudo mkdir -p /home/ubuntu/apps/backend
+
+                      # 최신 업로드본 선택
+                      LATEST_UPLOADED=$(ls -t /home/ubuntu/apps/backend/releases/*.jar | head -n1 || true)
+                      echo "LATEST_UPLOADED=$LATEST_UPLOADED"
+
+                      if [ -z "$LATEST_UPLOADED" ]; then
+                          echo "No uploaded JAR found under releases/. Abort."
+                          exit 1
+                      fi
+
+                      # 실행 파일명으로 고정 교체
+                      sudo cp -f "$LATEST_UPLOADED" /home/ubuntu/apps/backend/app-latest.jar
+                      sudo chmod 644 /home/ubuntu/apps/backend/app-latest.jar
+
+                      # 서비스 재시작
+                      sudo systemctl daemon-reload || true
+                      sudo systemctl restart backend
+
+                      # 짧은 대기 후 포트 리스닝 확인 (8080)
+                      sleep 4
+                      ss -ltnp | grep -E ':8080\b' || (echo 'backend not listening on 8080' && exit 1)
+
+                      # 상태/로그 요약(실패해도 워크플로우는 계속 보게만)
+                      sudo systemctl status backend --no-pager || true
+                      tail -n 80 /home/ubuntu/logs/backend.out || true
+                      tail -n 80 /home/ubuntu/logs/backend.err || true
