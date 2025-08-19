@@ -33,15 +33,18 @@ jobs:
 
             - name: Build bootJar
               working-directory: backEnd/alcohol-recommendation
+              shell: bash
               run: |
                   set -e
                   gradle --version
                   gradle clean bootJar -x test
                   echo "== built JARs =="
                   ls -l build/libs
-                  # 가장 최신 JAR 경로를 환경변수에 기록
-                  LAST_JAR=$(ls -t build/libs/*.jar | head -n1)
-                  echo "JAR_PATH=$LAST_JAR" >> $GITHUB_ENV
+                  # 최신 JAR 파일명만 추출
+                  LAST_JAR_FILE=$(ls -t build/libs/*.jar | head -n1 | xargs -n1 basename)
+                  # 리포 루트 기준 경로로 저장 (중요!)
+                  echo "JAR_PATH=backEnd/alcohol-recommendation/build/libs/${LAST_JAR_FILE}" >> $GITHUB_ENV
+                  echo "JAR_PATH set to: backEnd/alcohol-recommendation/build/libs/${LAST_JAR_FILE}"
 
             - name: Upload JAR to EC2
               uses: appleboy/scp-action@v0.1.7
