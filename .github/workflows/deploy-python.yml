@@ -1,56 +1,36 @@
-name: Deploy Python API to EC2
+name: Python CI/CD
 
 on:
-    push:
-        branches: [ master ]
-        paths:
-            - 'python/**'
-            - '.github/workflows/deploy-python.yml'
-
-concurrency:
-    group: deploy-python
-    cancel-in-progress: true
+  push:
+    branches: [ master ]
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
+  deploy-python:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Upload Python source to EC2 (strip top-level "python/")
-              uses: appleboy/scp-action@v0.1.7
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  source: "python/**"
-                  target: "/home/ubuntu/apps/python/"
-                  strip_components: 1
-                  overwrite: true
+      - name: Upload Python source to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "python/*"
+          target: "/home/ubuntu/apps/python/"
 
-            - name: Install deps & restart python.service
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  script: |
-                      set -e
-                      cd /home/ubuntu/apps/python
-                      # venv 준비
-                      python3 -m venv .venv || true
-                      . .venv/bin/activate
-                      python -m pip install --upgrade pip
-                      if [ -f requirements.txt ]; then
-                          pip install -r requirements.txt
-                      fi
-                      deactivate
-                      # 서비스 재시작
-                      sudo systemctl daemon-reload || true
-                      sudo systemctl restart python
-                      sleep 2
-                      sudo systemctl status python --no-pager || true
-                      # 8000 리슨 확인 (uvicorn/서비스 기준)
-                      ss -ltnp | grep -E ':8000\b' || (echo 'python api not listening on 8000' && exit 1)
+      - name: Restart Python
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ubuntu/apps/python
+            if [ ! -d .venv ]; then python3 -m venv .venv; fi
+            . .venv/bin/activate
+            pip install -U pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            pkill -f 'uvicorn' || true
+            nohup .venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 > python.log 2>&1 &

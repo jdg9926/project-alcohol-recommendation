@@ -1,87 +1,41 @@
-name: Deploy Backend to EC2
+name: Backend CI/CD
 
 on:
-    push:
-        branches: [ master ]
-        paths:
-            - 'backEnd/**'
-            - '.github/workflows/deploy-backEnd.yml'
-
-concurrency:
-    group: deploy-backend
-    cancel-in-progress: true
+  push:
+    branches: [ master ]
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
+  deploy-backend:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Set up JDK 17
-              uses: actions/setup-java@v4
-              with:
-                  distribution: 'temurin'
-                  java-version: '17'
-                  cache: 'gradle'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
-            # gradlew가 backEnd/alcohol-recommendation에 있다고 가정(네가 보낸 스샷 기준)
-            - name: Build with Gradle (bootJar)
-              working-directory: backEnd/alcohol-recommendation
-              run: |
-                  chmod +x ./gradlew || true
-                  ./gradlew clean bootJar -x test
-                  ls -l build/libs
-                  # 생성된 단일 JAR의 "정확한" 경로를 환경변수에 기록
-                  JAR_FILE=$(ls -t build/libs/*.jar | head -n1)
-                  echo "JAR_PATH=$JAR_FILE" >> $GITHUB_ENV
+      - name: Build Backend
+        working-directory: backEnd/alcohol-recommendation
+        run: ./gradlew clean build -x test
 
-            # 단일 파일로 업로드해야 tar empty/디렉토리 생성 오류 안남
-            - name: Upload JAR to EC2 (to /home/ubuntu/apps/backend/releases/)
-              uses: appleboy/scp-action@v0.1.7
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  source: "${{ env.JAR_PATH }}"
-                  target: "/home/ubuntu/apps/backend/releases/"
-                  overwrite: true
+      - name: Upload JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "backEnd/alcohol-recommendation/build/libs/alcohol-recommendation-0.0.1-SNAPSHOT.jar"
+          target: "/home/ubuntu/apps/backend/"
 
-            # 서버에서 파일명 고정(app-latest.jar) + 재시작
-            - name: Activate & Restart backend.service
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  script: |
-                      set -e
-                      sudo mkdir -p /home/ubuntu/apps/backend/releases
-                      sudo mkdir -p /home/ubuntu/apps/backend
-
-                      # 최신 업로드본 선택
-                      LATEST_UPLOADED=$(ls -t /home/ubuntu/apps/backend/releases/*.jar | head -n1 || true)
-                      echo "LATEST_UPLOADED=$LATEST_UPLOADED"
-
-                      if [ -z "$LATEST_UPLOADED" ]; then
-                          echo "No uploaded JAR found under releases/. Abort."
-                          exit 1
-                      fi
-
-                      # 실행 파일명으로 고정 교체
-                      sudo cp -f "$LATEST_UPLOADED" /home/ubuntu/apps/backend/app-latest.jar
-                      sudo chmod 644 /home/ubuntu/apps/backend/app-latest.jar
-
-                      # 서비스 재시작
-                      sudo systemctl daemon-reload || true
-                      sudo systemctl restart backend
-
-                      # 짧은 대기 후 포트 리스닝 확인 (8080)
-                      sleep 4
-                      ss -ltnp | grep -E ':8080\b' || (echo 'backend not listening on 8080' && exit 1)
-
-                      # 상태/로그 요약(실패해도 워크플로우는 계속 보게만)
-                      sudo systemctl status backend --no-pager || true
-                      tail -n 80 /home/ubuntu/logs/backend.out || true
-                      tail -n 80 /home/ubuntu/logs/backend.err || true
+      - name: Restart Backend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ubuntu/apps/backend
+            pkill -f 'java -jar' || true
+            nohup java -jar alcohol-recommendation-0.0.1-SNAPSHOT.jar > backend.log 2>&1 &

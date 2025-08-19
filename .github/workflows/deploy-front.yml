@@ -1,68 +1,43 @@
-name: Deploy Frontend to EC2
+name: Frontend CI/CD
 
 on:
-    push:
-        branches: [ master ]
-
-concurrency:
-    group: deploy-frontend
-    cancel-in-progress: true
+  push:
+    branches: [ master ]
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
+  deploy-frontend:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Setup Node.js 22.16.0
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 22.16.0
-                  cache: 'npm'
-                  cache-dependency-path: frontEnd/package-lock.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-            - name: Install dependencies
-              working-directory: frontEnd
-              run: npm ci
+      - name: Install & Build
+        working-directory: frontEnd
+        run: |
+          npm ci
+          npm run build
 
-            - name: Build
-              working-directory: frontEnd
-              run: npm run build
+      - name: Upload build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "frontEnd/build/*"
+          target: "/home/ubuntu/apps/frontend/"
 
-            - name: Cleanup target dir on EC2
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  script: |
-                      set -e
-                      mkdir -p /home/ubuntu/apps/frontend
-                      rm -rf /home/ubuntu/apps/frontend/*
-
-            - name: Upload build artifacts to EC2 (strip frontEnd/build/)
-              uses: appleboy/scp-action@v0.1.7
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  source: "frontEnd/build/**"
-                  target: "/home/ubuntu/apps/frontend/"
-                  strip_components: 2
-                  overwrite: true
-
-            - name: Nginx sanity check & reload
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  script: |
-                      set -e
-                      # 업로드 후 실제 배치 상태 확인 (디버깅에 도움)
-                      ls -l /home/ubuntu/apps/frontend | sed -n '1,200p'
-                      test -f /home/ubuntu/apps/frontend/index.html || (echo "index.html missing" && exit 1)
-                      sudo nginx -t
-                      sudo systemctl reload nginx || true
+      - name: Restart Frontend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ubuntu/apps/frontend
+            npm install -g serve
+            pkill -f "serve" || true
+            nohup serve -s . -l 3000 > frontend.log 2>&1 &
