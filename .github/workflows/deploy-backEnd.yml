@@ -1,70 +1,98 @@
 name: Deploy Backend to EC2
 
 on:
-    push:
-        branches: [ master ]
-        paths:
-            - 'backEnd/**'
-            - '.github/workflows/deploy-backEnd.yml'
+  push:
+    branches: [ master ]
+    paths:
+      - 'backEnd/**'
+      - '.github/workflows/deploy-backEnd.yml'
 
 concurrency:
-    group: deploy-backend
-    cancel-in-progress: true
+  group: deploy-backend
+  cancel-in-progress: true
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
+  deploy:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-            - name: Set up JDK 17
-              uses: actions/setup-java@v4
-              with:
-                  distribution: 'temurin'
-                  java-version: '17'
-                  cache: 'gradle'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
 
-            - name: Setup Gradle (no wrapper)
-              uses: gradle/actions/setup-gradle@v3
-              with:
-                  gradle-version: 8.7
+      - name: Locate gradlew & project dir
+        id: locate
+        shell: bash
+        run: |
+          set -e
+          # gradlew 위치 확인
+          if [ -x ./gradlew ]; then
+              echo "GRADLEW=./gradlew" >> $GITHUB_ENV
+          elif [ -x backEnd/gradlew ]; then
+              echo "GRADLEW=backEnd/gradlew" >> $GITHUB_ENV
+          elif [ -x backEnd/alcohol-recommendation/gradlew ]; then
+              echo "GRADLEW=backEnd/alcohol-recommendation/gradlew" >> $GITHUB_ENV
+          else
+              echo "gradlew not found in expected locations." >&2
+              exit 1
+          fi
 
-            - name: Build bootJar
-              working-directory: backEnd/alcohol-recommendation
-              shell: bash
-              run: |
-                  set -e
-                  gradle --version
-                  gradle clean bootJar -x test
-                  echo "== built JARs =="
-                  ls -l build/libs
-                  LAST_JAR_FILE=$(ls -t build/libs/*.jar | head -n1 | xargs -n1 basename)
-                  echo "JAR_PATH=backEnd/alcohol-recommendation/build/libs/${LAST_JAR_FILE}" >> $GITHUB_ENV
-                  echo "JAR_PATH set to: backEnd/alcohol-recommendation/build/libs/${LAST_JAR_FILE}"
+          # 프로젝트 디렉토리 확인
+          if [ -f backEnd/settings.gradle ] || [ -f backEnd/settings.gradle.kts ]; then
+              echo "PROJECT_DIR=backEnd" >> $GITHUB_ENV
+          else
+              echo "PROJECT_DIR=backEnd/alcohol-recommendation" >> $GITHUB_ENV
+          fi
 
-            - name: Upload JAR to EC2 as /home/ubuntu/apps/backend/app.jar
-              uses: appleboy/scp-action@v0.1.7
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  source: "${{ env.JAR_PATH }}"
-                  target: "/home/ubuntu/apps/backend/app.jar"
-                  overwrite: true
+          echo "Using GRADLEW=$(cat $GITHUB_ENV | grep '^GRADLEW=' | cut -d= -f2)"
+          echo "Using PROJECT_DIR=$(cat $GITHUB_ENV | grep '^PROJECT_DIR=' | cut -d= -f2)"
 
-            - name: Restart backend.service
-              uses: appleboy/ssh-action@v1.0.3
-              with:
-                  host: ${{ secrets.EC2_HOST }}
-                  username: ${{ secrets.EC2_USER }}
-                  key: ${{ secrets.EC2_KEY }}
-                  script: |
-                      set -e
-                      ls -l /home/ubuntu/apps/backend/app.jar
-                      sudo systemctl daemon-reload || true
-                      sudo systemctl restart backend
-                      sleep 2
-                      sudo systemctl status backend --no-pager || true
-                      ss -ltnp | grep -E ':8080\b' || (echo 'backend not listening on 8080' && exit 1)
+      - name: Build bootJar
+        shell: bash
+        run: |
+          set -e
+          chmod +x "${GRADLEW}" || true
+          if [ "${PROJECT_DIR}" = "backEnd" ]; then
+              "${GRADLEW}" -p backEnd clean :alcohol-recommendation:bootJar -x test
+              JAR_DIR="backEnd/alcohol-recommendation/build/libs"
+          else
+              "${GRADLEW}" -p backEnd/alcohol-recommendation clean bootJar -x test
+              JAR_DIR="backEnd/alcohol-recommendation/build/libs"
+          fi
+          ls -l "${JAR_DIR}"
+          echo "JAR_GLOB=${JAR_DIR}/*.jar" >> $GITHUB_ENV
+
+      - name: Upload JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "${{ env.JAR_GLOB }}"
+          target: "/home/ubuntu/apps/backend/"
+          overwrite: true
+
+      - name: Activate & Restart backend.service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            set -e
+            mkdir -p /home/ubuntu/apps/backend
+            LATEST_JAR=$(ls -t /home/ubuntu/apps/backend/*.jar | head -n1)
+            echo "LATEST_JAR=$LATEST_JAR"
+            mv -f "$LATEST_JAR" /home/ubuntu/apps/backend/app.jar
+            chmod 644 /home/ubuntu/apps/backend/app.jar
+            sudo systemctl daemon-reload || true
+            sudo systemctl restart backend
+            sleep 2
+            sudo systemctl status backend --no-pager || true
+            ss -ltnp | grep -E ':8080\b' || (echo 'backend not listening on 8080' && exit 1)
