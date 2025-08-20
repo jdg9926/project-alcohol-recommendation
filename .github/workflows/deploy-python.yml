@@ -3,17 +3,28 @@ name: CI/CD Python
 on:
   push:
     branches: [ master ]
-    paths:
-      - 'python/**'
-      - '.github/workflows/python.yml'
+  workflow_dispatch:
 
 jobs:
   deploy-python:
     runs-on: ubuntu-latest
+    concurrency:
+      group: python-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Ensure deploy dirs
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            sudo mkdir -p /opt/apps/python
+            sudo chown -R ubuntu:ubuntu /opt/apps
 
       - name: Copy python sources to EC2
         uses: appleboy/scp-action@v0.1.7

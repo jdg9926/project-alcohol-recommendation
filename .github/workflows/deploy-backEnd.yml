@@ -3,13 +3,14 @@ name: CI/CD Backend
 on:
   push:
     branches: [ master ]
-    paths:
-      - 'backEnd/**'
-      - '.github/workflows/backend.yml'
+  workflow_dispatch:
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+    concurrency:
+      group: backend-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout
@@ -38,6 +39,16 @@ jobs:
           ./gradlew clean build -x test
           ls -al build/libs
 
+      - name: Ensure deploy dirs
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            sudo mkdir -p /opt/apps/backend
+            sudo chown -R ubuntu:ubuntu /opt/apps
+
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -59,4 +70,4 @@ jobs:
             sudo systemctl restart backend.service
             sleep 3
             systemctl --no-pager --full status backend.service || true
-            journalctl -u backend.service -n 50 --no-pager || true
+            journalctl -u backend.service -n 100 --no-pager || true

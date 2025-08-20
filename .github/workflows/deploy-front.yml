@@ -3,13 +3,14 @@ name: CI/CD Frontend
 on:
   push:
     branches: [ master ]
-    paths:
-      - 'frontEnd/**'
-      - '.github/workflows/frontend.yml'
+  workflow_dispatch:
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+    concurrency:
+      group: frontend-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout
@@ -25,6 +26,16 @@ jobs:
         run: |
           npm ci || npm i
           npm run build
+
+      - name: Ensure deploy dirs
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            sudo mkdir -p /opt/apps/frontend/build
+            sudo chown -R ubuntu:ubuntu /opt/apps
 
       - name: Upload build to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -50,4 +61,3 @@ jobs:
               pm2 start "serve -s /opt/apps/frontend/build -l 3000" --name "frontend"
             fi
             pm2 save
-            pm2 status
