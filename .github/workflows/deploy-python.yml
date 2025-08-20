@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure deploy dirs
+      - name: Ensure python dir on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -26,7 +26,7 @@ jobs:
             sudo mkdir -p /opt/apps/python
             sudo chown -R ubuntu:ubuntu /opt/apps
 
-      - name: Copy python sources to EC2
+      - name: Sync python sources to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -37,21 +37,35 @@ jobs:
           overwrite: true
           strip_components: 1
 
-      - name: Install deps & restart PM2
+      # 설치 시간이 긴 의존성은 별도 스텝 + 넉넉한 타임아웃
+      - name: Install Python deps (long timeout)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
+          command_timeout: 45m
           script: |
+            set -e
             cd /opt/apps/python
             if [ ! -d "venv" ]; then
               python3 -m venv venv
             fi
             ./venv/bin/pip install --upgrade pip
             if [ -f "requirements.txt" ]; then
-              ./venv/bin/pip install -r requirements.txt
+              # 대형 패키지 설치 시간 절감 목적의 no-cache-dir (원하면 제거 가능)
+              ./venv/bin/pip install --no-cache-dir -r requirements.txt
             fi
+
+      - name: Start/Restart FastAPI with PM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            set -e
+            cd /opt/apps/python
             if pm2 describe fastapi-app >/dev/null 2>&1; then
               pm2 restart fastapi-app
             else
