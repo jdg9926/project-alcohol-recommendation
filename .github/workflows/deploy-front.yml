@@ -1,37 +1,53 @@
-name: Deploy Frontend to EC2
+name: CI/CD Frontend
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ master ]
+    paths:
+      - 'frontEnd/**'
+      - '.github/workflows/frontend.yml'
 
 jobs:
-  deploy-frontend:
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build React
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install & Build
+        working-directory: frontEnd
         run: |
-          cd frontEnd
-          npm install
+          npm ci || npm i
           npm run build
 
-      - name: Upload Frontend Build to EC2
+      - name: Upload build to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "frontEnd/build/*"
-          target: "/home/ubuntu/apps/frontend/"
+          source: "frontEnd/build/**"
+          target: "/opt/apps/frontend/build"
+          overwrite: true
+          strip_components: 2
 
-      - name: Restart Frontend Service
-        uses: appleboy/ssh-action@master
+      - name: Start/Restart serve (PM2)
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            sudo systemctl restart frontend.service
+            if pm2 describe frontend >/dev/null 2>&1; then
+              pm2 restart frontend
+            else
+              pm2 start "serve -s /opt/apps/frontend/build -l 3000" --name "frontend"
+            fi
+            pm2 save
+            pm2 status

@@ -45,14 +45,6 @@ class RecommendResponse(BaseModel):
     result: Optional[str] = None
     error: Optional[str] = None
 
-
-# ===== 헬스체크 =====
-@app.get("/health")
-def health() -> Dict[str, Any]:
-    """서비스 상태 확인용 엔드포인트"""
-    return {"ok": True, "service": "ai", "version": "1.3.0"}
-
-
 # ===== 와인 추천 =====
 @app.post("/recommend", response_model=RecommendResponse)
 async def recommend(req: RecommendRequest) -> RecommendResponse:
