@@ -78,10 +78,17 @@ jobs:
             # 이전 세션 종료
             screen -S "$SESSION" -X quit || true
 
-            # 최신 JAR 자동 선택
-            JAR_FILE="$(ls -t ${JAR_GLOB} 2>/dev/null | head -n 1 || true)"
+            # 디버그: 현재 JAR 목록 출력
+            echo "[DEBUG] Available JARs:"
+            ls -l ${JAR_GLOB} || true
+
+            # 최신 JAR 선택: -plain.jar, -sources.jar, -javadoc.jar 제외
+            JAR_FILE="$(ls -t ${JAR_GLOB} 2>/dev/null \
+              | grep -Ev -- '(-plain|sources|javadoc)\.jar$' \
+              | head -n 1 || true)"
+
             if [[ -z "${JAR_FILE}" ]]; then
-              echo "[ERROR] No JAR found in ${APP_DIR}"
+              echo "[ERROR] No runnable JAR found in ${APP_DIR}"
               exit 1
             fi
 
@@ -90,7 +97,7 @@ jobs:
 
             # 백그라운드 기동 (screen 로그 파일 지정)
             screen -dmS "${SESSION}" -L -Logfile "${LOG_FILE}" \
-              bash -lc "java -jar '${JAR_FILE}' --server.port=${PORT}"
+              bash -lc "exec java -jar '${JAR_FILE}' --server.port=${PORT}"
 
             echo "[OK] Started ${JAR_FILE} on :${PORT} (screen: ${SESSION})"
             echo "Logs: ${LOG_FILE}"
