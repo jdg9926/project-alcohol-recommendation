@@ -40,8 +40,9 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             mkdir -p /home/ubuntu/backend/build/libs
+            mkdir -p /home/ubuntu/backend/logs
 
-      - name: Upload JAR to EC2
+      - name: Upload JAR to EC2 (strip nested dirs)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -78,11 +79,9 @@ jobs:
             # 이전 세션 종료
             screen -S "$SESSION" -X quit || true
 
-            # 디버그: 현재 JAR 목록 출력
-            echo "[DEBUG] Available JARs:"
-            ls -l ${JAR_GLOB} || true
+            echo "[DEBUG] Available JARs:"; ls -l ${JAR_GLOB} || true
 
-            # 최신 JAR 선택: -plain.jar, -sources.jar, -javadoc.jar 제외
+            # 최신 fat JAR 선택: -plain / -sources / -javadoc 제외
             JAR_FILE="$(ls -t ${JAR_GLOB} 2>/dev/null \
               | grep -Ev -- '(-plain|sources|javadoc)\.jar$' \
               | head -n 1 || true)"
@@ -92,13 +91,11 @@ jobs:
               exit 1
             fi
 
-            # 로그 디렉토리 준비
             mkdir -p "${LOG_DIR}"
 
-            # 백그라운드 기동 (screen 로그 파일 지정)
+            # 백그라운드 기동
             screen -dmS "${SESSION}" -L -Logfile "${LOG_FILE}" \
               bash -lc "exec java -jar '${JAR_FILE}' --server.port=${PORT}"
 
             echo "[OK] Started ${JAR_FILE} on :${PORT} (screen: ${SESSION})"
             echo "Logs: ${LOG_FILE}"
-
