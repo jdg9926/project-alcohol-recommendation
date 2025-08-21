@@ -15,15 +15,11 @@ def _get_required(name: str) -> str:
     return value
 
 
-def get_google_credentials_path() -> str:
-    """
-    GOOGLE_APPLICATION_CREDENTIALS 경로 점검 (파일 존재 확인)
-    """
-    path = _get_required("GOOGLE_APPLICATION_CREDENTIALS")
-    if not Path(path).exists():
+def get_google_credentials_path():
+    path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not path or not os.path.exists(path):
         raise FileNotFoundError(f"[CONFIG] GOOGLE_APPLICATION_CREDENTIALS 경로가 존재하지 않습니다: {path}")
     return path
-
 
 def get_vertex_project_id() -> str:
     """
