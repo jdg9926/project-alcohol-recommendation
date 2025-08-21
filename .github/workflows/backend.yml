@@ -47,7 +47,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: "backEnd/build/libs/alcohol-recommendation-0.0.1-SNAPSHOT.jar"
+          source: "backEnd/build/libs/*.jar"
           target: "/home/ubuntu/backend/build/libs"
           overwrite: true
           strip_components: 3
@@ -66,6 +66,7 @@ jobs:
             PORT="8888"
             LOG_DIR="/home/ubuntu/backend/logs"
             LOG_FILE="${LOG_DIR}/backend.screen.log"
+            JAR_GLOB="*.jar"
 
             cd "$APP_DIR"
 
