@@ -29,10 +29,10 @@ export default function LoginPage() {
 
     // ✅ 자동 입력 핸들러
     const fillAdmin = () => {
-        setForm({ userId: 'admin', password: '!@as134652' });
+        setForm({ userId: 'admin01', password: '11111111' });
     };
     const fillUser = () => {
-        setForm({ userId: 'test1', password: '11111111' });
+        setForm({ userId: 'user01', password: '11111111' });
     };
 
     return (
