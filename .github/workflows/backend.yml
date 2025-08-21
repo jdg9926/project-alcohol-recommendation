@@ -50,6 +50,7 @@ jobs:
           source: "backEnd/build/libs/*.jar"
           target: "/home/ubuntu/backend/build/libs"
           overwrite: true
+          strip_components: 3
 
       - name: Restart with screen
         uses: appleboy/ssh-action@v1.0.0
