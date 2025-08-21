@@ -29,6 +29,18 @@ jobs:
         working-directory: backEnd
         run: ./gradlew clean build -x test
 
+      - name: Show build outputs
+        run: ls -l backEnd/build/libs/
+
+      - name: Prepare target directory on EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            mkdir -p /home/ubuntu/backend/build/libs
+
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -36,9 +48,10 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           source: "backEnd/build/libs/*.jar"
-          target: "/home/ubuntu/backend"
+          target: "/home/ubuntu/backend/build/libs"
+          overwrite: true
 
-      - name: Restart with screen (refactored)
+      - name: Restart with screen
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -47,14 +60,11 @@ jobs:
           script: |
             set -euo pipefail
 
-            # --- config ---
-            APP_DIR="/home/ubuntu/backend"
+            APP_DIR="/home/ubuntu/backend/build/libs"
             SESSION="spring-server"
             PORT="8888"
-            LOG_DIR="${APP_DIR}/logs"
+            LOG_DIR="/home/ubuntu/backend/logs"
             LOG_FILE="${LOG_DIR}/backend.screen.log"
-            JAR_GLOB="*.jar"
-            # ---------------
 
             cd "$APP_DIR"
 
@@ -63,7 +73,7 @@ jobs:
               sudo apt-get update -y && sudo apt-get install -y screen
             fi
 
-            # 이전 screen 세션 종료(있으면)
+            # 이전 세션 종료
             screen -S "$SESSION" -X quit || true
 
             # 최신 JAR 자동 선택
@@ -82,3 +92,4 @@ jobs:
 
             echo "[OK] Started ${JAR_FILE} on :${PORT} (screen: ${SESSION})"
             echo "Logs: ${LOG_FILE}"
+
