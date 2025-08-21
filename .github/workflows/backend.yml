@@ -69,7 +69,8 @@ jobs:
             # 최신 JAR 자동 선택
             JAR_FILE="$(ls -t ${JAR_GLOB} 2>/dev/null | head -n 1 || true)"
             if [[ -z "${JAR_FILE}" ]]; then
-              echo "[ERROR] No JAR found in ${APP_DIR}"; exit 1
+              echo "[ERROR] No JAR found in ${APP_DIR}"
+              exit 1
             fi
 
             # 로그 디렉토리 준비
