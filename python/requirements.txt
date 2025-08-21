@@ -8,3 +8,7 @@ vertexai
 requests
 httpx
 python-dotenv
+
+# DB 관련 (추가)
+sqlalchemy
+pymysql
